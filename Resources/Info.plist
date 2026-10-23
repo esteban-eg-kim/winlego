@@ -20,6 +20,13 @@
 	<string>__VERSION__</string>
 	<key>LSMinimumSystemVersion</key>
 	<string>13.0</string>
+	<key>CFBundleDevelopmentRegion</key>
+	<string>en</string>
+	<key>CFBundleLocalizations</key>
+	<array>
+		<string>en</string>
+		<string>ko</string>
+	</array>
 	<key>LSUIElement</key>
 	<true/>
 	<key>LSApplicationCategoryType</key>

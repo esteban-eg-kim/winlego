@@ -18,6 +18,9 @@ final class AppModel: ObservableObject {
     @Published var settingsTab: SettingsTab = .rules
     /// Non-nil while the layout editor sheet is up.
     @Published var editingLayout: Layout?
+    /// The shortcut row waiting for a key press, if any.
+    @Published var recordingShortcut: HotKeyCenter.Key?
+    private var recordMonitor: Any?
     let editor = LayoutEditorModel()
 
     /// Enabled, permitted, and watching windows.
@@ -88,9 +91,68 @@ final class AppModel: ObservableObject {
 
     private func syncRunning() {
         guard trusted else { return }
-        hotKeys.register()
+        registerHotKeys()
         if enabled { manager.start() }
         objectWillChange.send()
+    }
+
+    // MARK: - Shortcuts
+
+    private func registerHotKeys() {
+        var combos: [HotKeyCenter.Key: KeyCombo] = [:]
+        for key in HotKeyCenter.Key.allCases { combos[key] = config.shortcuts[key.rawValue] }
+        hotKeys.register(combos)
+    }
+
+    func shortcut(for key: HotKeyCenter.Key) -> KeyCombo {
+        config.shortcuts[key.rawValue] ?? key.defaultCombo
+    }
+
+    func shortcutLabel(_ key: HotKeyCenter.Key) -> String { KeyCombo.label(shortcut(for: key)) }
+
+    func shortcutFailed(_ key: HotKeyCenter.Key) -> Bool { hotKeys.failed.contains(key) }
+
+    func setShortcut(_ combo: KeyCombo, for key: HotKeyCenter.Key) {
+        config.shortcuts[key.rawValue] = combo == key.defaultCombo ? nil : combo
+        configChanged()
+        registerHotKeys()
+    }
+
+    /// Starts listening for the next key press in our own windows; Esc cancels.
+    func beginRecording(_ key: HotKeyCenter.Key) {
+        endRecording()
+        recordingShortcut = key
+        hotKeys.unregisterKeys()
+        recordMonitor = NSEvent.addLocalMonitorForEvents(matching: .keyDown) { [weak self] event in
+            guard let self else { return event }
+            let code = Int(event.keyCode)
+            let flags = event.modifierFlags.intersection(.deviceIndependentFlagsMask)
+            var mods: KeyCombo.Modifiers = []
+            if flags.contains(.control) { mods.insert(.control) }
+            if flags.contains(.option) { mods.insert(.option) }
+            if flags.contains(.shift) { mods.insert(.shift) }
+            if flags.contains(.command) { mods.insert(.command) }
+            MainActor.assumeIsolated {
+                if code == 53 && mods.isEmpty {
+                    self.endRecording()
+                    return
+                }
+                let combo = KeyCombo(keyCode: code, modifiers: mods)
+                guard combo.isUsable else { NSSound.beep(); return }
+                self.endRecording()
+                self.setShortcut(combo, for: key)
+            }
+            return nil
+        }
+    }
+
+    func endRecording() {
+        if let recordMonitor { NSEvent.removeMonitor(recordMonitor) }
+        recordMonitor = nil
+        if recordingShortcut != nil {
+            recordingShortcut = nil
+            registerHotKeys()
+        }
     }
 
     // MARK: - Displays and layouts
@@ -200,10 +262,10 @@ final class AppModel: ObservableObject {
     func describe(_ rule: Rule) -> String {
         let screen = rule.displayID.flatMap { id in screens.first { $0.id == id } }
             ?? screens.first { $0.id == Screens.mainScreenID() }
-        let zoneName = screen.flatMap { s in zones(on: s).indices.contains(rule.zone) ? zones(on: s)[rule.zone].name : nil }
-            ?? "Zone \(rule.zone + 1)"
+        let zoneName = screen.flatMap { s in zones(on: s).indices.contains(rule.zone) ? L(zones(on: s)[rule.zone].name) : nil }
+            ?? String(format: L("Zone %lld"), rule.zone + 1)
         let title = rule.titleContains.map { " “\($0)”" } ?? ""
-        return "\(rule.appName)\(title) → \(screen?.name ?? "Main display") · \(zoneName)"
+        return "\(rule.appName)\(title) → \(screen?.name ?? L("Main display")) · \(zoneName)"
     }
 
     private func configChanged() {

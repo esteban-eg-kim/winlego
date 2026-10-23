@@ -71,7 +71,7 @@ private struct RuleRow: View {
                 set: { zone in model.updateRule(rule.id) { $0.zone = zone } }
             )) {
                 ForEach(Array(model.zones(forRuleDisplay: rule.displayID).enumerated()), id: \.offset) { index, zone in
-                    Text("\(index + 1)  \(zone.name)").tag(index)
+                    Text("\(index + 1)  \(L(zone.name))").tag(index)
                 }
             }
             .labelsHidden()

@@ -160,13 +160,54 @@ public extension NormRect {
     }
 }
 
-/// Where a window lives: a zone of a display.
+/// Where a window lives: one zone of a display, or several neighbouring zones merged.
 public struct Placement: Codable, Hashable, Sendable {
     public var displayID: String
-    public var zone: Int
+    /// Zone indexes, sorted, never empty. `zone` is the first.
+    public var zones: [Int]
+
+    public var zone: Int { zones.first ?? 0 }
+    public var isSpan: Bool { zones.count > 1 }
 
     public init(displayID: String, zone: Int) {
         self.displayID = displayID
-        self.zone = zone
+        self.zones = [zone]
+    }
+
+    public init(displayID: String, zones: some Collection<Int>) {
+        self.displayID = displayID
+        let sorted = Array(Set(zones)).sorted()
+        self.zones = sorted.isEmpty ? [0] : sorted
+    }
+
+    private enum CodingKeys: String, CodingKey { case displayID, zone, zones }
+
+    public init(from decoder: Decoder) throws {
+        let c = try decoder.container(keyedBy: CodingKeys.self)
+        displayID = try c.decode(String.self, forKey: .displayID)
+        if let zones = try c.decodeIfPresent([Int].self, forKey: .zones), !zones.isEmpty {
+            self.zones = Array(Set(zones)).sorted()
+        } else {
+            zones = [try c.decodeIfPresent(Int.self, forKey: .zone) ?? 0]
+        }
+    }
+
+    public func encode(to encoder: Encoder) throws {
+        var c = encoder.container(keyedBy: CodingKeys.self)
+        try c.encode(displayID, forKey: .displayID)
+        try c.encode(zone, forKey: .zone)
+        try c.encode(zones, forKey: .zones)
+    }
+}
+
+public extension Layout {
+    /// The rectangle covered by a set of zones: their union. Indexes past the end map to
+    /// the last zone. Nil only when the layout has no zones.
+    func frame(forZones zones: [Int], in visibleFrame: CGRect, gap: CGFloat = 0) -> CGRect? {
+        let frames = frames(in: visibleFrame, gap: gap)
+        guard let last = frames.indices.last else { return nil }
+        return zones.map { frames[min(max($0, 0), last)] }.reduce(nil) { union, rect in
+            union.map { $0.union(rect) } ?? rect
+        }
     }
 }

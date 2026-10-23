@@ -8,6 +8,7 @@ import WinlegoCore
 /// is one of:
 ///
 ///     place <bundleID> <display#> <zone#>   first placeable window of the app → zone
+///     span <bundleID> <display#> <z1,z2,…>   first window of the app → merged zones
 ///     release <bundleID>                     drop its assignment
 ///     layout <display#> <layoutID>           pick a preset for a display
 ///     remember <bundleID>                    add a rule from where its window is now
@@ -48,6 +49,10 @@ final class DevCommands {
         case "place" where parts.count == 4:
             guard let window = firstWindow(of: parts[1]), let screen = screen(parts[2]), let zone = Int(parts[3]) else { return fail(line) }
             manager.place(window, at: Placement(displayID: screen.id, zone: zone - 1))
+        case "span" where parts.count == 4:
+            guard let window = firstWindow(of: parts[1]), let screen = screen(parts[2]) else { return fail(line) }
+            let zones = parts[3].split(separator: ",").compactMap { Int($0) }.map { $0 - 1 }
+            manager.place(window, at: Placement(displayID: screen.id, zones: zones))
         case "release" where parts.count == 2:
             guard let window = firstWindow(of: parts[1]), let key = window.key else { return fail(line) }
             manager.release(key, reason: "dev command")
@@ -76,6 +81,26 @@ final class DevCommands {
         case "savelayout" where parts.count == 2:
             guard let screen = screen(parts[1]) else { return fail(line) }
             manager.saveSessionLayout(for: screen)
+        case "simdrag" where parts.count >= 4:
+            // simdrag <bundleID> <toX> <toY> [shift,option,control,command]: drags the app's
+            // first window by its title bar with synthetic mouse events, modifiers held.
+            guard let window = firstWindow(of: parts[1]), let frame = window.frame,
+                  let x = Double(parts[2]), let y = Double(parts[3]) else { return fail(line) }
+            var flags: CGEventFlags = []
+            for name in (parts.count > 4 ? parts[4] : "").split(separator: ",") {
+                switch name {
+                case "shift": flags.insert(.maskShift)
+                case "option": flags.insert(.maskAlternate)
+                case "control": flags.insert(.maskControl)
+                case "command": flags.insert(.maskCommand)
+                default: break
+                }
+            }
+            let start = CGPoint(x: frame.midX, y: frame.minY + 12)
+            Task { @MainActor in
+                await DevCommands.simulateDrag(from: start, to: CGPoint(x: x, y: y), flags: flags)
+                self.log.info("simdrag done")
+            }
         case "arrange":
             manager.arrangeAll()
         case "dump":
@@ -83,6 +108,31 @@ final class DevCommands {
         default:
             fail(line)
         }
+    }
+
+    /// Posts a mouse-down, a trail of drags, and a mouse-up to the HID event tap.
+    static func simulateDrag(from start: CGPoint, to end: CGPoint, flags: CGEventFlags, steps: Int = 25) async {
+        var flags = flags
+        func post(_ type: CGEventType, _ point: CGPoint) {
+            guard let event = CGEvent(mouseEventSource: nil, mouseType: type, mouseCursorPosition: point, mouseButton: .left) else { return }
+            event.flags = flags
+            event.post(tap: .cghidEventTap)
+        }
+        CGWarpMouseCursorPosition(start)
+        try? await Task.sleep(for: .milliseconds(80))
+        // Press without ⌃ (that would be a right-click), add it once the drag is under way.
+        let downFlags = flags
+        flags.remove(.maskControl)
+        post(.leftMouseDown, start)
+        flags = downFlags
+        try? await Task.sleep(for: .milliseconds(80))
+        for i in 1...steps {
+            let t = Double(i) / Double(steps)
+            post(.leftMouseDragged, CGPoint(x: start.x + (end.x - start.x) * t, y: start.y + (end.y - start.y) * t))
+            try? await Task.sleep(for: .milliseconds(30))
+        }
+        try? await Task.sleep(for: .milliseconds(150))
+        post(.leftMouseUp, end)
     }
 
     private func fail(_ line: String) {
@@ -111,7 +161,7 @@ final class DevCommands {
         }
         out += "assignments:\n"
         for (key, placement) in manager.assignments {
-            out += "  \(key) → \(placement.displayID.prefix(8))/\(placement.zone + 1)\n"
+            out += "  \(key) → \(placement.displayID.prefix(8))/\(placement.zones.map { String($0 + 1) }.joined(separator: "+"))\n"
         }
         out += "windows:\n"
         for app in NSWorkspace.shared.runningApplications where app.activationPolicy == .regular {

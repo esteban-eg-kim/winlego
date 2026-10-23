@@ -1,6 +1,14 @@
 # Changelog
 
-## 0.1.0 (unreleased)
+## 0.2.0 (unreleased)
+
+- Merge zones while dragging: once the drag is under way, hold `⌃` as well and the
+  zones you pass over join into one target for the window.
+- Shortcuts can be changed, reset or removed in Settings › General; conflicts with
+  other apps are flagged.
+- Korean localization, following the system language.
+
+## 0.1.0 — 2026-10-23
 
 - First version: a zone layout per display, windows placed by `⇧` drag, `⌃⌥`
   shortcuts, the menu bar, or app rules.

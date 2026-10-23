@@ -7,6 +7,9 @@ final class ZoneOverlay {
     private var windows: [String: (window: NSWindow, view: ZoneOverlayView, screen: ScreenInfo, zones: [CGRect])] = [:]
     private(set) var isVisible = false
     private(set) var highlighted: Placement?
+    /// How far apart two zones may be and still count as neighbours: the configured gap
+    /// plus a little, so zones separated only by spacing can be merged.
+    var adjacencyTolerance: CGFloat = 2
 
     /// Shows the zones of every display. `zones(screen)` gives absolute Quartz frames.
     func show(screens: [ScreenInfo], zones: (ScreenInfo) -> [CGRect], names: (ScreenInfo) -> [String]) {
@@ -22,7 +25,7 @@ final class ZoneOverlay {
             entry.window.setFrame(cocoaFrame, display: false)
             entry.view.zones = frames.map { $0.offsetBy(dx: -screen.frame.minX, dy: -screen.frame.minY) }
             entry.view.names = names(screen)
-            entry.view.highlighted = nil
+            entry.view.highlighted = []
             entry.window.orderFrontRegardless()
             windows[screen.id] = (entry.window, entry.view, screen, frames)
         }
@@ -30,15 +33,37 @@ final class ZoneOverlay {
         highlighted = nil
     }
 
-    /// Lights up the zone under the cursor and remembers it as the drop target.
-    func highlight(at point: CGPoint) {
-        var found: Placement?
-        for (id, entry) in windows {
-            let index = entry.screen.frame.contains(point) ? Geometry.zoneIndex(containing: point, in: entry.zones) : nil
-            if entry.view.highlighted != index { entry.view.highlighted = index }
-            if let index { found = Placement(displayID: id, zone: index) }
+    /// Lights up the zone under the cursor and remembers it as the drop target. With
+    /// `span`, zones the cursor visits accumulate (on one display, each touching the
+    /// selection so far) and the drop target becomes their union. A merged selection
+    /// survives letting go of the key while the cursor stays inside it, so releasing the
+    /// modifier a moment before the mouse button does not lose it.
+    func highlight(at point: CGPoint, span: Bool = false) {
+        guard let (id, entry) = windows.first(where: { $0.value.screen.frame.contains(point) }),
+              let index = Geometry.zoneIndex(containing: point, in: entry.zones) else {
+            if !span { clearHighlight() }
+            return
         }
-        highlighted = found
+        var selection: Set<Int> = [index]
+        if let current = highlighted, current.displayID == id {
+            if span {
+                let union = current.zones.map { entry.zones[$0] }.reduce(entry.zones[current.zone]) { $0.union($1) }
+                selection = Set(current.zones)
+                if Geometry.areAdjacent(union, entry.zones[index], tolerance: adjacencyTolerance) { selection.insert(index) }
+            } else if current.isSpan, current.zones.contains(index) {
+                selection = Set(current.zones)
+            }
+        }
+        for (otherID, other) in windows where otherID != id && !other.view.highlighted.isEmpty {
+            other.view.highlighted = []
+        }
+        if entry.view.highlighted != selection { entry.view.highlighted = selection }
+        highlighted = Placement(displayID: id, zones: selection)
+    }
+
+    private func clearHighlight() {
+        for entry in windows.values where !entry.view.highlighted.isEmpty { entry.view.highlighted = [] }
+        highlighted = nil
     }
 
     func hide() {
@@ -67,7 +92,7 @@ final class ZoneOverlay {
 final class ZoneOverlayView: NSView {
     var zones: [CGRect] = [] { didSet { needsDisplay = true } }
     var names: [String] = [] { didSet { needsDisplay = true } }
-    var highlighted: Int? { didSet { needsDisplay = true } }
+    var highlighted: Set<Int> = [] { didSet { needsDisplay = true } }
 
     override var isFlipped: Bool { true }
 
@@ -76,7 +101,7 @@ final class ZoneOverlayView: NSView {
         for (index, zone) in zones.enumerated() {
             let rect = zone.insetBy(dx: 6, dy: 6)
             let path = NSBezierPath(roundedRect: rect, xRadius: 14, yRadius: 14)
-            let lit = index == highlighted
+            let lit = highlighted.contains(index)
             (lit ? accent.withAlphaComponent(0.35) : NSColor.white.withAlphaComponent(0.12)).setFill()
             path.fill()
             (lit ? accent : NSColor.white.withAlphaComponent(0.7)).setStroke()

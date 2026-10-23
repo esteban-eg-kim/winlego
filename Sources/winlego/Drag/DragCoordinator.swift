@@ -1,4 +1,5 @@
 import AppKit
+import os
 import WinlegoCore
 
 /// Ties the drag monitor to the overlay and the zone manager: show zones while the
@@ -8,11 +9,12 @@ final class DragCoordinator {
     private unowned let manager: ZoneManager
     private let monitor = DragMonitor()
     private let overlay = ZoneOverlay()
+    private let log = Logger(subsystem: Geometry.bundleID, category: "drag")
 
     init(manager: ZoneManager) {
         self.manager = manager
-        monitor.onDrag = { [weak self] window, point, active in self?.dragged(window, at: point, active: active) }
-        monitor.onDrop = { [weak self] window, point, active in self?.dropped(window, at: point, active: active) }
+        monitor.onDrag = { [weak self] window, point, mods in self?.dragged(window, at: point, mods: mods) }
+        monitor.onDrop = { [weak self] window, point, mods in self?.dropped(window, at: point, mods: mods) }
     }
 
     var trigger: DragTrigger {
@@ -27,20 +29,31 @@ final class DragCoordinator {
         overlay.hide()
     }
 
-    private func dragged(_ window: AXWindow, at point: CGPoint, active: Bool) {
-        guard active else { overlay.hide(); return }
+    private var spanWasDown = false
+
+    private func dragged(_ window: AXWindow, at point: CGPoint, mods: DragMonitor.Modifiers) {
+        if mods.span != spanWasDown {
+            spanWasDown = mods.span
+            log.info("merge key \(mods.span ? "down" : "up", privacy: .public); trigger active: \(mods.active)")
+        }
+        guard mods.active else { overlay.hide(); return }
         if !overlay.isVisible {
+            overlay.adjacencyTolerance = CGFloat(manager.config.gap) + 2
             overlay.show(screens: manager.screens,
                          zones: { manager.zoneFrames(on: $0) },
-                         names: { manager.layout(for: $0).zones.map(\.name) })
+                         names: { manager.layout(for: $0).zones.map { L($0.name) } })
         }
-        overlay.highlight(at: point)
+        let before = overlay.highlighted
+        overlay.highlight(at: point, span: mods.span)
+        if let now = overlay.highlighted, now != before, now.isSpan || before?.isSpan == true {
+            log.info("merge selection: \(now.zones.map { String($0 + 1) }.joined(separator: "+"), privacy: .public)")
+        }
     }
 
-    private func dropped(_ window: AXWindow?, at point: CGPoint, active: Bool) {
+    private func dropped(_ window: AXWindow?, at point: CGPoint, mods: DragMonitor.Modifiers) {
         var drop: Placement?
-        if overlay.isVisible, active {
-            overlay.highlight(at: point)
+        if overlay.isVisible, mods.active {
+            overlay.highlight(at: point, span: mods.span)
             drop = overlay.highlighted
         }
         overlay.hide()

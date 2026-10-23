@@ -44,7 +44,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
                 backing: .buffered,
                 defer: false
             )
-            window.title = "winlego Settings"
+            window.title = L("winlego Settings")
             window.isReleasedWhenClosed = false
             window.contentView = NSHostingView(rootView: SettingsView(model: model))
             window.center()
@@ -61,7 +61,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
             backing: .buffered,
             defer: false
         )
-        window.title = "Welcome to winlego"
+        window.title = L("Welcome to winlego")
         window.isReleasedWhenClosed = false
         window.contentView = NSHostingView(rootView: OnboardingView(model: model) { [weak window] in
             window?.close()

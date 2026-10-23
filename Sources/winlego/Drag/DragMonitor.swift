@@ -9,11 +9,19 @@ import WinlegoCore
 final class DragMonitor {
     var trigger: DragTrigger = .shift
 
-    /// A window is being dragged. The point is the cursor in Quartz coordinates; the flag
-    /// says whether the trigger (⇧, ⌥ or "always") is active right now.
-    var onDrag: ((AXWindow, CGPoint, Bool) -> Void)?
+    struct Modifiers {
+        /// The trigger (⇧, ⌥ or "always") is active.
+        var active: Bool
+        /// ⌃ is down: zones under the cursor accumulate into one target. Pressed after the
+        /// drag has started: control-click before it would be a right-click. ⌥ is taken
+        /// by macOS's own tiling preview.
+        var span: Bool
+    }
+
+    /// A window is being dragged. The point is the cursor in Quartz coordinates.
+    var onDrag: ((AXWindow, CGPoint, Modifiers) -> Void)?
     /// The button went up. The window is the one that was being dragged, if any.
-    var onDrop: ((AXWindow?, CGPoint, Bool) -> Void)?
+    var onDrop: ((AXWindow?, CGPoint, Modifiers) -> Void)?
 
     private var monitors: [Any] = []
     private var candidate: (window: AXWindow, origin: CGPoint)?
@@ -45,12 +53,13 @@ final class DragMonitor {
         dragging = nil
     }
 
-    private func isActive(_ flags: NSEvent.ModifierFlags) -> Bool {
-        switch trigger {
+    private func modifiers(_ flags: NSEvent.ModifierFlags) -> Modifiers {
+        let active = switch trigger {
         case .shift: flags.contains(.shift)
         case .option: flags.contains(.option)
         case .always: true
         }
+        return Modifiers(active: active, span: flags.contains(.control))
     }
 
     private func mouseDown() {
@@ -68,19 +77,19 @@ final class DragMonitor {
                   abs(frame.minX - candidate.origin.x) > 1 || abs(frame.minY - candidate.origin.y) > 1 else { return }
             dragging = candidate.window
         }
-        if let dragging { onDrag?(dragging, Screens.quartzMouseLocation(), isActive(flags)) }
+        if let dragging { onDrag?(dragging, Screens.quartzMouseLocation(), modifiers(flags)) }
     }
 
     private func flagsChanged(flags: NSEvent.ModifierFlags) {
         // Pressing ⇧ halfway through a drag should bring the zones up right away.
-        if let dragging { onDrag?(dragging, Screens.quartzMouseLocation(), isActive(flags)) }
+        if let dragging { onDrag?(dragging, Screens.quartzMouseLocation(), modifiers(flags)) }
     }
 
     private func mouseUp(flags: NSEvent.ModifierFlags) {
         let window = dragging
         dragging = nil
         candidate = nil
-        onDrop?(window, Screens.quartzMouseLocation(), isActive(flags))
+        onDrop?(window, Screens.quartzMouseLocation(), modifiers(flags))
     }
 
     /// The window under a point, whichever app it belongs to.

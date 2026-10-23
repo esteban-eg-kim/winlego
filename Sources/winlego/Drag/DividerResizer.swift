@@ -265,19 +265,19 @@ final class SaveLayoutPrompt {
         effect.layer?.masksToBounds = true
         panel.contentView = effect
 
-        let label = NSTextField(labelWithString: "Save this layout for \(displayName)?")
+        let label = NSTextField(labelWithString: String(format: L("Save this layout for %@?"), displayName))
         label.font = .systemFont(ofSize: 13, weight: .medium)
         label.frame = NSRect(x: 16, y: 44, width: 268, height: 20)
         label.lineBreakMode = .byTruncatingTail
         effect.addSubview(label)
 
-        let save = NSButton(title: "Save", target: self, action: #selector(saveTapped))
+        let save = NSButton(title: L("Save"), target: self, action: #selector(saveTapped))
         save.bezelStyle = .rounded
         save.keyEquivalent = "\r"
         save.frame = NSRect(x: 196, y: 10, width: 88, height: 28)
         effect.addSubview(save)
 
-        let later = NSButton(title: "Not Now", target: self, action: #selector(laterTapped))
+        let later = NSButton(title: L("Not Now"), target: self, action: #selector(laterTapped))
         later.bezelStyle = .rounded
         later.frame = NSRect(x: 100, y: 10, width: 92, height: 28)
         effect.addSubview(later)

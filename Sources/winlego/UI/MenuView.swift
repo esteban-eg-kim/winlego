@@ -13,17 +13,17 @@ struct MenuView: View {
             ForEach(model.screens) { screen in
                 Menu(screen.name) {
                     ForEach(Array(model.zones(on: screen).enumerated()), id: \.offset) { index, zone in
-                        Button("\(index + 1)  \(zone.name)") { model.placeFocused(on: screen, zone: index) }
+                        Button("\(index + 1)  \(L(zone.name))") { model.placeFocused(on: screen, zone: index) }
                     }
                 }
             }
             Divider()
-            Text("Previous / Next Zone  \(HotKeyCenter.Key.previousZone.label) \(HotKeyCenter.Key.nextZone.label)")
-            Text("Previous / Next Display  \(HotKeyCenter.Key.previousDisplay.label) \(HotKeyCenter.Key.nextDisplay.label)")
+            Text("Previous / Next Zone  \(model.shortcutLabel(.previousZone)) \(model.shortcutLabel(.nextZone))")
+            Text("Previous / Next Display  \(model.shortcutLabel(.previousDisplay)) \(model.shortcutLabel(.nextDisplay))")
         }
         Button("Remember This Window Here") { model.rememberFocused() }
-        Button("Release This Window  \(HotKeyCenter.Key.release.label)") { model.releaseFocused() }
-        Button("Arrange All by Rules  \(HotKeyCenter.Key.arrangeAll.label)") { model.arrangeAll() }
+        Button("Release This Window  \(model.shortcutLabel(.release))") { model.releaseFocused() }
+        Button("Arrange All by Rules  \(model.shortcutLabel(.arrangeAll))") { model.arrangeAll() }
 
         Divider()
 
@@ -35,7 +35,7 @@ struct MenuView: View {
                         set: { model.setLayout($0, for: screen) }
                     )) {
                         ForEach(model.allLayouts) { layout in
-                            Text(layout.name).tag(layout.id)
+                            Text(L(layout.name)).tag(layout.id)
                         }
                     }
                     .pickerStyle(.inline)

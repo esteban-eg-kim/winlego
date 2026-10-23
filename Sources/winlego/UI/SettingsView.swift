@@ -37,7 +37,7 @@ struct LayoutsView: View {
                 ForEach(model.config.customLayouts) { layout in
                     HStack(spacing: 16) {
                         LayoutPreview(layout: layout, portrait: false).frame(width: 64, height: 36)
-                        Text(layout.name)
+                        Text(L(layout.name))
                         Spacer()
                         Button("Edit…") { model.openEditor(layout) }
                         Button(role: .destructive) { model.deleteCustomLayout(layout.id) } label: { Image(systemName: "trash") }
@@ -46,7 +46,7 @@ struct LayoutsView: View {
                 }
                 HStack {
                     Button("New Layout…") {
-                        model.openEditor(WinlegoCore.Layout(id: "custom-\(UUID().uuidString.prefix(8).lowercased())", name: "My Layout", root: .zone(name: nil)))
+                        model.openEditor(WinlegoCore.Layout(id: "custom-\(UUID().uuidString.prefix(8).lowercased())", name: L("My Layout"), root: .zone(name: nil)))
                     }
                     Spacer()
                     Text("Or drag the boundary between two placed windows on the real screen, then save when asked.")
@@ -67,7 +67,7 @@ struct LayoutsView: View {
                             get: { model.layoutID(for: screen) },
                             set: { model.setLayout($0, for: screen) }
                         )) {
-                            ForEach(model.allLayouts) { layout in Text(layout.name).tag(layout.id) }
+                            ForEach(model.allLayouts) { layout in Text(L(layout.name)).tag(layout.id) }
                         }
                         .labelsHidden()
                         .frame(width: 220)
@@ -129,11 +129,15 @@ struct GeneralView: View {
                 }
                 Text("Drop a window on a zone to put it there. Dropping an assigned window anywhere else lets it go.")
                     .font(.caption).foregroundStyle(.secondary)
+                Text("Once the drag has started, hold ⌃ Control as well to merge the zones you pass over into one.")
+                    .font(.caption).foregroundStyle(.secondary)
             }
             Section("Shortcuts") {
-                ForEach(HotKeyCenter.Key.allCases, id: \.rawValue) { key in
-                    LabeledContent(key.title) { Text(key.label).monospaced() }
+                ForEach(HotKeyCenter.Key.allCases) { key in
+                    ShortcutRow(model: model, key: key)
                 }
+                Text("Click a shortcut, then press the new keys. Esc cancels. Function keys work alone; other keys need ⌃, ⌥ or ⌘.")
+                    .font(.caption).foregroundStyle(.secondary)
             }
             Section("Ignored apps") {
                 if model.config.excludedBundleIDs.isEmpty {
@@ -187,15 +191,43 @@ struct AppLabel: View {
     }
 }
 
-extension HotKeyCenter.Key {
-    var title: String {
-        switch self {
-        case .previousZone: "Previous zone"
-        case .nextZone: "Next zone"
-        case .previousDisplay: "Previous display"
-        case .nextDisplay: "Next display"
-        case .arrangeAll: "Arrange all by rules"
-        case .release: "Release window"
+/// One shortcut: title, the combo as a button that records, reset and clear.
+struct ShortcutRow: View {
+    @ObservedObject var model: AppModel
+    var key: HotKeyCenter.Key
+
+    var body: some View {
+        let recording = model.recordingShortcut == key
+        let combo = model.shortcut(for: key)
+        HStack {
+            Text(key.title)
+            Spacer()
+            if model.shortcutFailed(key) {
+                Label("In use by another app", systemImage: "exclamationmark.triangle.fill")
+                    .labelStyle(.iconOnly).foregroundStyle(.orange)
+                    .help("Another app holds this combination; pick a different one.")
+            }
+            Button {
+                recording ? model.endRecording() : model.beginRecording(key)
+            } label: {
+                Text(recording ? "Press keys…" : KeyCombo.label(combo))
+                    .monospaced()
+                    .frame(minWidth: 90)
+            }
+            .buttonStyle(.bordered)
+            .tint(recording ? .accentColor : nil)
+            Button {
+                model.setShortcut(key.defaultCombo, for: key)
+            } label: { Image(systemName: "arrow.uturn.backward") }
+                .buttonStyle(.borderless)
+                .help("Reset to default")
+                .disabled(combo == key.defaultCombo)
+            Button {
+                model.setShortcut(.none, for: key)
+            } label: { Image(systemName: "xmark.circle") }
+                .buttonStyle(.borderless)
+                .help("No shortcut")
+                .disabled(combo.isNone)
         }
     }
 }

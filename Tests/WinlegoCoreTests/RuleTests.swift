@@ -25,4 +25,14 @@ import Testing
         #expect(config.layout(for: "unknown", portrait: true).id == "rows-2")
         #expect(config.layout(for: "unknown", portrait: false).id == "wide-left")
     }
+
+    @Test func keyCombosNeedAModifierUnlessFunctionKey() throws {
+        #expect(KeyCombo(keyCode: 123, modifiers: [.control, .option]).isUsable)
+        #expect(!KeyCombo(keyCode: 0, modifiers: [.shift]).isUsable, "⇧A alone would break typing")
+        #expect(KeyCombo(keyCode: 122, modifiers: []).isUsable, "F1 alone is fine")
+        #expect(KeyCombo.none.isUsable && KeyCombo.none.isNone)
+        let json = #"{"shortcuts":{"nextZone":{"keyCode":124,"modifiers":3}}}"#.data(using: .utf8)!
+        let config = try JSONDecoder().decode(Config.self, from: json)
+        #expect(config.shortcuts["nextZone"] == KeyCombo(keyCode: 124, modifiers: [.control, .option]))
+    }
 }

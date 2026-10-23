@@ -57,4 +57,24 @@ import Testing
         config.upsert(Layout(id: "halves", name: "again", root: mine.root))
         #expect(config.customLayouts.count == 1 && config.customLayouts[0].name == "again")
     }
+
+    @Test func placementsSpanZonesAndDecodeOldFiles() throws {
+        let span = Placement(displayID: "D", zones: [2, 0, 2])
+        #expect(span.zones == [0, 2] && span.zone == 0 && span.isSpan)
+        let old = try JSONDecoder().decode(Placement.self, from: #"{"displayID":"D","zone":1}"#.data(using: .utf8)!)
+        #expect(old.zones == [1] && !old.isSpan)
+        let back = try JSONDecoder().decode(Placement.self, from: JSONEncoder().encode(span))
+        #expect(back == span)
+    }
+
+    @Test func spanFrameIsTheUnion() {
+        let screen = CGRect(x: 0, y: 0, width: 900, height: 600)
+        let thirds = Presets.thirds
+        #expect(thirds.frame(forZones: [0, 1], in: screen) == CGRect(x: 0, y: 0, width: 600, height: 600))
+        #expect(thirds.frame(forZones: [7], in: screen) == CGRect(x: 600, y: 0, width: 300, height: 600), "past the end → last zone")
+        let grid = Presets.grid.frames(in: screen)
+        #expect(Geometry.areAdjacent(grid[0], grid[1]) && Geometry.areAdjacent(grid[0], grid[2]))
+        #expect(Geometry.areAdjacent(grid[0], grid[3]), "corner neighbours touch at a point")
+        #expect(!Geometry.areAdjacent(CGRect(x: 0, y: 0, width: 10, height: 10), CGRect(x: 20, y: 0, width: 10, height: 10)))
+    }
 }

@@ -70,12 +70,11 @@ final class ZoneManager {
         layout(for: screen).frames(in: screen.visibleFrame, gap: config.gap)
     }
 
-    /// A zone number past the end (the layout shrank) maps to the last zone.
+    /// The area a placement covers: its zone, or the union of its merged zones. A zone
+    /// number past the end (the layout shrank) maps to the last zone.
     func targetFrame(for placement: Placement) -> CGRect? {
         guard let screen = screen(placement.displayID) else { return nil }
-        let frames = zoneFrames(on: screen)
-        guard let last = frames.indices.last else { return nil }
-        return frames[min(placement.zone, last)]
+        return layout(for: screen).frame(forZones: placement.zones, in: screen.visibleFrame, gap: config.gap)
     }
 
     // MARK: - Resizing zones by dragging a divider
@@ -86,12 +85,17 @@ final class ZoneManager {
         for screen in screens {
             let layout = layout(for: screen)
             let zones = layout.zones
-            let occupied = Set(assignments.values.filter { $0.displayID == screen.id }.map { min($0.zone, zones.count - 1) })
-            guard !occupied.isEmpty else { continue }
+            // Each placed window as the set of zone paths it covers.
+            let placed = assignments.values.filter { $0.displayID == screen.id }.map { placement in
+                placement.zones.map { zones[min($0, zones.count - 1)].path }
+            }
+            guard !placed.isEmpty else { continue }
             for divider in layout.dividers {
-                let firstSide = occupied.contains { zones[$0].path.starts(with: divider.path + [0]) }
-                let secondSide = occupied.contains { zones[$0].path.starts(with: divider.path + [1]) }
-                if firstSide && secondSide {
+                // Grabbable when some window lies wholly on one side and another wholly on the other.
+                func wholly(on side: Int) -> Bool {
+                    placed.contains { paths in paths.allSatisfy { $0.starts(with: divider.path + [side]) } }
+                }
+                if wholly(on: 0) && wholly(on: 1) {
                     result.append((screen, divider, divider.line.resolved(in: screen.visibleFrame)))
                 }
             }
@@ -112,7 +116,7 @@ final class ZoneManager {
     func saveSessionLayout(for screen: ScreenInfo) {
         guard var layout = sessionLayouts.removeValue(forKey: screen.id) else { return }
         if !config.customLayouts.contains(where: { $0.id == layout.id }) {
-            layout = Layout(id: "custom-\(screen.id.prefix(8).lowercased())", name: "\(layout.name) · \(screen.name)", root: layout.root)
+            layout = Layout(id: "custom-\(screen.id.prefix(8).lowercased())", name: String(format: L("%@ · %@"), L(layout.name), screen.name), root: layout.root)
         }
         config.upsert(layout)
         config.layoutByDisplay[screen.id] = layout.id
@@ -162,7 +166,7 @@ final class ZoneManager {
         let ok = apply(target, to: window)
         if ok { settledFrames[key] = window.frame }
         resizer.invalidate()
-        log.info("place \(key, privacy: .public) '\(window.title ?? "", privacy: .public)' → \(placement.displayID.prefix(8), privacy: .public)/\(placement.zone) \(ok ? "ok" : "FAILED", privacy: .public)")
+        log.info("place \(key, privacy: .public) '\(window.title ?? "", privacy: .public)' → \(placement.displayID.prefix(8), privacy: .public)/\(placement.zones.map(String.init).joined(separator: "+"), privacy: .public) \(ok ? "ok" : "FAILED", privacy: .public)")
         return ok
     }
 

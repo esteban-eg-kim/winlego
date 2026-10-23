@@ -51,6 +51,11 @@ public enum Geometry {
         CGRect(x: rect.minX, y: primaryHeight - rect.maxY, width: rect.width, height: rect.height)
     }
 
+    /// True when two rectangles share an edge (or overlap): the test for merging zones.
+    public static func areAdjacent(_ a: CGRect, _ b: CGRect, tolerance: CGFloat = 1) -> Bool {
+        a.insetBy(dx: -tolerance, dy: -tolerance).intersects(b)
+    }
+
     /// Next zone index when stepping `delta` zones, wrapping around.
     public static func step(zone: Int, count: Int, by delta: Int) -> Int {
         guard count > 0 else { return 0 }

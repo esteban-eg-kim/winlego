@@ -14,10 +14,11 @@ display a zone layout, puts windows into zones, and keeps them there.
 - **A layout per display.** Halves, thirds, ⅔ + ⅓, a 2×2 grid, a stack beside a
   wide column, top and bottom for a portrait monitor, or the whole screen for a
   small one. Or draw your own in the editor.
-- **Four ways to place a window.** Hold `⇧` while dragging and drop it on a zone.
-  Press `⌃⌥←` / `⌃⌥→` to step through zones, `⌃⌥↑` / `⌃⌥↓` to hop displays. Pick a
-  zone from the menu bar. Or set a rule: *Terminal always goes to the right third
-  of the main display.*
+- **Four ways to place a window.** Hold `⇧` while dragging and drop it on a zone;
+  add `⌃` once the drag is under way to merge the zones you pass over into one. Press `⌃⌥←` / `⌃⌥→` to step
+  through zones, `⌃⌥↑` / `⌃⌥↓` to hop displays (shortcuts are yours to change).
+  Pick a zone from the menu bar. Or set a rule: *Terminal always goes to the
+  right third of the main display.*
 - **It stays put.** If an app moves its window, or a display sleeps and wakes,
   winlego puts the window back. Drag a window away yourself and it is released;
   winlego never fights you.
@@ -25,6 +26,7 @@ display a zone layout, puts windows into zones, and keeps them there.
   drag that boundary. Both windows follow live. On release, choose whether to keep
   the new proportions as the display's layout.
 - **One permission, no network.** Accessibility only. Nothing is collected.
+- **English and Korean.** Follows the system language.
 
 ## Install
 
@@ -60,6 +62,9 @@ troubleshooting: **[Manual](docs/manual.md)** ([한국어](docs/manual.ko.md)).
 | `⌃⌥↩` | Arrange every window by its rule |
 | `⌃⌥⌫` | Release the focused window from its zone |
 | `⇧` + drag | Show zones; drop to place |
+| `⇧` + drag, then `⌃` | Merge the zones you pass over; drop to fill them all |
+
+Change any shortcut in Settings › General.
 
 ## How it works
 

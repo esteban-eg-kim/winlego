@@ -16,11 +16,13 @@ public struct Config: Codable, Equatable, Sendable {
     public var excludedBundleIDs: [String] = []
     /// Layouts the user drew or adjusted. They shadow a preset with the same id.
     public var customLayouts: [Layout] = []
+    /// Shortcut overrides by action name; a missing action keeps its default.
+    public var shortcuts: [String: KeyCombo] = [:]
 
     public init() {}
 
     private enum CodingKeys: String, CodingKey {
-        case layoutByDisplay, rules, dragTrigger, gap, excludedBundleIDs, customLayouts
+        case layoutByDisplay, rules, dragTrigger, gap, excludedBundleIDs, customLayouts, shortcuts
     }
 
     public init(from decoder: Decoder) throws {
@@ -31,6 +33,7 @@ public struct Config: Codable, Equatable, Sendable {
         gap = try c.decodeIfPresent(Double.self, forKey: .gap) ?? 0
         excludedBundleIDs = try c.decodeIfPresent([String].self, forKey: .excludedBundleIDs) ?? []
         customLayouts = try c.decodeIfPresent([Layout].self, forKey: .customLayouts) ?? []
+        shortcuts = try c.decodeIfPresent([String: KeyCombo].self, forKey: .shortcuts) ?? [:]
     }
 
     /// Custom layouts first, then the presets.

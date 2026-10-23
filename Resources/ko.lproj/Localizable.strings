@@ -1,0 +1,128 @@
+/* Menu bar */
+"Keep Windows in Zones" = "창을 영역에 유지";
+"Move Window to" = "창 이동";
+"Previous / Next Zone  %@ %@" = "이전 / 다음 영역  %1$@ %2$@";
+"Previous / Next Display  %@ %@" = "이전 / 다음 디스플레이  %1$@ %2$@";
+"Remember This Window Here" = "이 창을 여기에 기억";
+"Release This Window  %@" = "이 창 배정 해제  %@";
+"Arrange All by Rules  %@" = "규칙대로 모두 정렬  %@";
+"Layouts" = "레이아웃";
+"Layout" = "레이아웃";
+"Rules" = "규칙";
+"No rules yet. Place a window, then “Remember This Window Here”." = "규칙이 아직 없습니다. 창을 배치한 뒤 “이 창을 여기에 기억”을 고르세요.";
+"Remove Rule" = "규칙 삭제";
+"Edit Rules…" = "규칙 편집…";
+"Settings…" = "설정…";
+"Open at Login" = "로그인 시 열기";
+"⚠️ Allow Accessibility Access…" = "⚠️ 손쉬운 사용 권한 허용…";
+"About winlego" = "winlego 정보";
+"Quit winlego" = "winlego 종료";
+
+/* Onboarding */
+"Welcome to winlego" = "winlego 에 오신 것을 환영합니다";
+"Snap windows into zones, and keep them there." = "창을 영역에 맞춰 넣고, 그 자리를 지킵니다.";
+"To place other apps' windows into your zones and keep them there, winlego needs to see and move windows. Allow it under System Settings › Privacy & Security › Accessibility." = "다른 앱의 창을 영역에 넣고 유지하려면 winlego 가 창을 보고 옮길 수 있어야 합니다. 시스템 설정 › 개인정보 보호 및 보안 › 손쉬운 사용에서 허용해 주세요.";
+"Access allowed" = "권한 허용됨";
+"Waiting for access…" = "권한을 기다리는 중…";
+"Done" = "완료";
+"Open System Settings" = "시스템 설정 열기";
+"winlego lives in the menu bar (%@). Pick a layout for each display there." = "winlego 는 메뉴바(%@)에 있습니다. 거기서 디스플레이마다 레이아웃을 고르세요.";
+
+/* Settings window */
+"winlego Settings" = "winlego 설정";
+"General" = "일반";
+"My layouts" = "내 레이아웃";
+"Edit…" = "편집…";
+"New Layout…" = "새 레이아웃…";
+"Or drag the boundary between two placed windows on the real screen, then save when asked." = "또는 실제 화면에서 배정된 두 창 사이의 경계를 끈 뒤, 물어볼 때 저장하세요.";
+"Layout per display" = "디스플레이별 레이아웃";
+"Spacing" = "간격";
+"%lld pt" = "%lld pt";
+"Gap between neighbouring zones. Takes effect the next time windows are placed." = "이웃한 영역 사이의 간격. 다음에 창을 배치할 때부터 적용됩니다.";
+"Dragging" = "드래그";
+"Show zones while dragging" = "드래그 중 영역 표시";
+"Holding ⇧ Shift" = "⇧ Shift 를 누른 동안";
+"Holding ⌥ Option" = "⌥ Option 을 누른 동안";
+"Always" = "항상";
+"Drop a window on a zone to put it there. Dropping an assigned window anywhere else lets it go." = "창을 영역 위에 놓으면 거기에 들어갑니다. 배정된 창을 다른 곳에 놓으면 배정이 풀립니다.";
+"Once the drag has started, hold ⌃ Control as well to merge the zones you pass over into one." = "드래그를 시작한 뒤 ⌃ Control 도 함께 누르면 지나간 영역들이 하나로 합쳐집니다.";
+"Shortcuts" = "단축키";
+"Click a shortcut, then press the new keys. Esc cancels. Function keys work alone; other keys need ⌃, ⌥ or ⌘." = "단축키를 클릭한 뒤 새 키를 누르세요. Esc 는 취소. 기능키는 단독으로 되고, 다른 키는 ⌃, ⌥, ⌘ 중 하나가 필요합니다.";
+"Press keys…" = "키를 누르세요…";
+"In use by another app" = "다른 앱이 사용 중";
+"Another app holds this combination; pick a different one." = "다른 앱이 이 조합을 쓰고 있습니다. 다른 조합을 고르세요.";
+"Reset to default" = "기본값으로";
+"No shortcut" = "단축키 없음";
+"Previous zone" = "이전 영역";
+"Next zone" = "다음 영역";
+"Previous display" = "이전 디스플레이";
+"Next display" = "다음 디스플레이";
+"Arrange all by rules" = "규칙대로 모두 정렬";
+"Release window" = "창 배정 해제";
+"Ignored apps" = "무시할 앱";
+"Windows of ignored apps are never placed by rules." = "무시할 앱의 창은 규칙으로 배치하지 않습니다.";
+"Ignore an App…" = "앱 무시하기…";
+"Startup" = "시작";
+"Accessibility access" = "손쉬운 사용 권한";
+"Allowed" = "허용됨";
+"Allow…" = "허용…";
+
+/* Rules tab */
+"No rules yet" = "규칙이 아직 없습니다";
+"Add one here, or put a window where you want it and choose\n“Remember This Window Here” from the menu bar." = "여기서 추가하거나, 창을 원하는 곳에 두고 메뉴바에서\n“이 창을 여기에 기억”을 고르세요.";
+"Add Rule for App…" = "앱 규칙 추가…";
+"Rules apply when a window opens, and to every window with “Arrange All”." = "규칙은 창이 열릴 때, 그리고 “모두 정렬”할 때 모든 창에 적용됩니다.";
+"Arrange All Now" = "지금 모두 정렬";
+"Any title" = "모든 제목";
+"Only windows whose title contains this text" = "제목에 이 글자가 든 창만";
+"Main display" = "메인 디스플레이";
+"Zone %lld" = "영역 %lld";
+
+/* Layout editor */
+"Layout name" = "레이아웃 이름";
+"Preview" = "미리보기";
+"Landscape" = "가로";
+"Portrait" = "세로";
+"Split Left | Right" = "좌 | 우 가르기";
+"Split Top / Bottom" = "상 / 하 가르기";
+"Remove Zone" = "영역 삭제";
+"Zone name" = "영역 이름";
+"Click a zone to select it. Drag the handles to change the split." = "영역을 클릭해 선택하고, 손잡이를 끌어 분할을 바꾸세요.";
+"Cancel" = "취소";
+"Save" = "저장";
+"My Layout" = "내 레이아웃";
+
+/* Boundary drag prompt */
+"Save this layout for %@?" = "이 레이아웃을 %@ 에 저장할까요?";
+"Not Now" = "나중에";
+
+/* Preset layouts and zones */
+"Full Screen" = "전체 화면";
+"Full" = "전체";
+"Halves" = "반반";
+"Left" = "왼쪽";
+"Right" = "오른쪽";
+"Wide Left (⅔ + ⅓)" = "넓은 왼쪽 (⅔ + ⅓)";
+"Left ⅔" = "왼쪽 ⅔";
+"Right ⅓" = "오른쪽 ⅓";
+"Wide Right (⅓ + ⅔)" = "넓은 오른쪽 (⅓ + ⅔)";
+"Left ⅓" = "왼쪽 ⅓";
+"Right ⅔" = "오른쪽 ⅔";
+"Thirds" = "3열";
+"Center" = "가운데";
+"Grid 2×2" = "격자 2×2";
+"Top Left" = "좌상";
+"Top Right" = "우상";
+"Bottom Left" = "좌하";
+"Bottom Right" = "우하";
+"Left + Right Stack" = "왼쪽 + 오른쪽 쌓기";
+"Center Column" = "가운데 열";
+"Top + Bottom" = "위 + 아래";
+"Top" = "위";
+"Bottom" = "아래";
+"Three Rows" = "3행";
+"Middle" = "가운데";
+"Tall Top (⅔ + ⅓)" = "높은 위 (⅔ + ⅓)";
+"Top ⅔" = "위 ⅔";
+"Bottom ⅓" = "아래 ⅓";
+"%@ · %@" = "%1$@ · %2$@";

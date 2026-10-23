@@ -116,7 +116,7 @@ struct LayoutEditorView: View {
                             .fill(isSelected ? Color.accentColor.opacity(0.55) : Color.accentColor.opacity(0.22))
                         RoundedRectangle(cornerRadius: 6)
                             .strokeBorder(isSelected ? Color.accentColor : Color.accentColor.opacity(0.5), lineWidth: isSelected ? 3 : 1)
-                        Text(zone.name).font(.callout.weight(.semibold)).foregroundStyle(.primary)
+                        Text(L(zone.name)).font(.callout.weight(.semibold)).foregroundStyle(.primary)
                     }
                     .frame(width: max(w * r.width - 6, 0), height: max(h * r.height - 6, 0))
                     .offset(x: w * r.x + 3, y: h * r.y + 3)

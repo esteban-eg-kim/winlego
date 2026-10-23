@@ -64,7 +64,15 @@ A window is *placed* when winlego has put it in a zone. Four ways:
   press it mid-drag), and every display shows its zones. The zone under the cursor
   lights up; let go to place the window there. Settings › General can change the
   trigger to `⌥`, or to *Always* so zones appear on every drag.
-- **Shortcuts.** `⌃⌥←` and `⌃⌥→` move the focused window to the previous or next
+- **Merge zones: add `⌃`.** Once the drag is under way and the zones are showing,
+  hold `⌃` as well and move the cursor across neighbouring zones on one display.
+  Press `⌃` only after you have grabbed the window: control-click before that is
+  a right-click and no drag starts. (`⌥` is not used: macOS shows its own tiling
+  preview on option-drag.) Each one you touch joins the
+  selection; let go and the window fills them all. The layout itself does not
+  change; only that window spans several zones. Dragging the boundary inside a
+  spanned window does nothing, since the window covers both sides.
+- **Shortcuts.** By default `⌃⌥←` and `⌃⌥→` move the focused window to the previous or next
   zone on its display, wrapping around. A window that is not placed yet starts
   from the zone it overlaps most. `⌃⌥↑` and `⌃⌥↓` move it to the same zone number
   on the previous or next display (left to right, then top to bottom).
@@ -158,8 +166,22 @@ Menu bar › **Settings…** (`⌘,`).
 
 - **Rules**: see above.
 - **Layouts**: my layouts, layout per display, spacing.
-- **General**: drag trigger, the shortcut table, ignored apps, Open at Login,
-  permission status.
+- **General**: drag trigger, shortcuts, ignored apps, Open at Login, permission
+  status.
+
+### Changing shortcuts
+
+Settings › General › Shortcuts lists every action with its keys. Click the keys,
+press the new combination, done. `Esc` cancels. The arrow button restores the
+default; the cross removes the shortcut. Function keys may be used alone; any
+other key needs `⌃`, `⌥` or `⌘` so ordinary typing is never swallowed. A warning
+triangle means another app already holds that combination.
+
+### Language
+
+winlego follows the system language: Korean when macOS is set to Korean,
+English otherwise. Layout and zone names are translated too; names you type
+yourself stay as typed.
 
 Everything is stored in `~/Library/Application Support/winlego/config.json`.
 Delete the file to start over.
@@ -187,9 +209,9 @@ user interface" mode is on; winlego turns it off during a move.
 **A window keeps jumping back and forth.** winlego gives up after a few rounds
 and releases the window. Add the app to *Ignored apps* if it is a habit.
 
-**Shortcuts do nothing.** Another app may own `⌃⌥` + arrows. winlego registers
-through the system hot key service, which refuses a combination that is taken;
-quit the other app to check. Changing shortcuts is on the list.
+**Shortcuts do nothing.** Another app may own the combination. winlego registers
+through the system hot key service, which refuses a combination that is taken,
+and marks the row with a warning in Settings › General. Pick another one there.
 
 **Logs.** winlego writes to the unified log:
 
