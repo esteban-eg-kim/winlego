@@ -26,11 +26,32 @@ private struct MenuBarIcon: View {
 final class AppDelegate: NSObject, NSApplicationDelegate {
     let model = AppModel()
     private var onboarding: NSWindow?
+    private var settings: NSWindow?
     private lazy var dev = DevCommands(model: model)
 
     func applicationDidFinishLaunching(_ notification: Notification) {
         dev.start()
+        model.openSettings = { [weak self] tab in self?.showSettings(tab: tab) }
         if !model.trusted { showOnboarding() }
+    }
+
+    func showSettings(tab: SettingsTab) {
+        model.settingsTab = tab
+        if settings == nil {
+            let window = NSWindow(
+                contentRect: NSRect(x: 0, y: 0, width: 760, height: 480),
+                styleMask: [.titled, .closable, .miniaturizable, .resizable],
+                backing: .buffered,
+                defer: false
+            )
+            window.title = "winlego Settings"
+            window.isReleasedWhenClosed = false
+            window.contentView = NSHostingView(rootView: SettingsView(model: model))
+            window.center()
+            settings = window
+        }
+        NSApp.activate(ignoringOtherApps: true)
+        settings?.makeKeyAndOrderFront(nil)
     }
 
     private func showOnboarding() {

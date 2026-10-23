@@ -15,11 +15,14 @@ final class AppModel: ObservableObject {
     @Published var launchAtLogin: Bool = LoginItem.isEnabled
     @Published private(set) var trusted = Permissions.isTrusted
     @Published private(set) var screens: [ScreenInfo] = []
+    @Published var settingsTab: SettingsTab = .rules
 
     /// Enabled, permitted, and watching windows.
     var isActive: Bool { enabled && trusted && manager.isRunning }
 
     let manager = ZoneManager()
+    /// Installed by the app delegate, which owns the window.
+    var openSettings: ((SettingsTab) -> Void)?
     private let hotKeys = HotKeyCenter()
     private let defaults = UserDefaults.standard
     private var accessPoll: Timer?
@@ -124,9 +127,41 @@ final class AppModel: ObservableObject {
         configChanged()
     }
 
+    func setGap(_ gap: Double) {
+        config.gap = gap
+        configChanged()
+    }
+
+    func setExcluded(_ bundleID: String, _ excluded: Bool) {
+        config.excludedBundleIDs.removeAll { $0 == bundleID }
+        if excluded { config.excludedBundleIDs.append(bundleID) }
+        configChanged()
+    }
+
+    func addRule(bundleID: String, appName: String) {
+        config.rules.append(Rule(bundleID: bundleID, appName: appName, displayID: nil, zone: 0))
+        configChanged()
+    }
+
+    func updateRule(_ id: UUID, _ change: (inout Rule) -> Void) {
+        guard let index = config.rules.firstIndex(where: { $0.id == id }) else { return }
+        change(&config.rules[index])
+        configChanged()
+    }
+
     func removeRule(_ rule: Rule) {
         config.rules.removeAll { $0.id == rule.id }
         configChanged()
+    }
+
+    func runningApps() -> [AppInfo.Running] { AppInfo.running() }
+
+    /// The zones a rule can pick from: those of its display's layout (main display when unset).
+    func zones(forRuleDisplay displayID: String?) -> [Zone] {
+        let screen = displayID.flatMap { id in screens.first { $0.id == id } }
+            ?? screens.first { $0.id == Screens.mainScreenID() }
+            ?? screens.first
+        return screen.map(zones(on:)) ?? []
     }
 
     /// How the menu describes where a rule sends windows.

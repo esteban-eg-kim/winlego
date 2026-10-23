@@ -51,26 +51,14 @@ struct MenuView: View {
                     Button("Remove Rule") { model.removeRule(rule) }
                 }
             }
-        }
-
-        Menu("Show Zones While Dragging") {
-            Picker("Trigger", selection: Binding(
-                get: { model.config.dragTrigger },
-                set: { model.setDragTrigger($0) }
-            )) {
-                Text("Holding ⇧ Shift").tag(DragTrigger.shift)
-                Text("Holding ⌥ Option").tag(DragTrigger.option)
-                Text("Always").tag(DragTrigger.always)
-            }
-            .pickerStyle(.inline)
+            Divider()
+            Button("Edit Rules…") { model.openSettings?(.rules) }
         }
 
         Divider()
 
-        Toggle("Open at Login", isOn: Binding(
-            get: { model.launchAtLogin },
-            set: { model.setLaunchAtLogin($0) }
-        ))
+        Button("Settings…") { model.openSettings?(.general) }
+            .keyboardShortcut(",")
 
         Divider()
 
