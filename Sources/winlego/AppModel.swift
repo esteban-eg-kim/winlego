@@ -4,14 +4,23 @@ import WinlegoCore
 
 @MainActor
 final class AppModel: ObservableObject {
-    @Published var enabled: Bool { didSet { defaults.set(enabled, forKey: Keys.enabled) } }
+    @Published var enabled: Bool {
+        didSet {
+            defaults.set(enabled, forKey: Keys.enabled)
+            manager.enabled = enabled
+            syncRunning()
+        }
+    }
+    @Published private(set) var config: Config
     @Published var launchAtLogin: Bool = LoginItem.isEnabled
     @Published private(set) var trusted = Permissions.isTrusted
     @Published private(set) var screens: [ScreenInfo] = []
 
-    /// Enabled and permitted.
-    var isActive: Bool { enabled && trusted }
+    /// Enabled, permitted, and watching windows.
+    var isActive: Bool { enabled && trusted && manager.isRunning }
 
+    let manager = ZoneManager()
+    private let hotKeys = HotKeyCenter()
     private let defaults = UserDefaults.standard
     private var accessPoll: Timer?
     private var observers: [NSObjectProtocol] = []
@@ -23,34 +32,30 @@ final class AppModel: ObservableObject {
     init() {
         defaults.register(defaults: [Keys.enabled: true])
         enabled = defaults.bool(forKey: Keys.enabled)
+        config = ConfigStore.load()
+        manager.config = config
+        manager.enabled = enabled
 
         refreshScreens()
         observers.append(NotificationCenter.default.addObserver(
             forName: NSApplication.didChangeScreenParametersNotification, object: nil, queue: .main
         ) { [weak self] _ in
-            MainActor.assumeIsolated { self?.refreshScreens() }
+            MainActor.assumeIsolated {
+                self?.refreshScreens()
+                self?.manager.reapplyAllAfterSettling()
+            }
         })
-        if !trusted { pollAccess() }
+
+        hotKeys.handler = { [weak self] key in self?.hotKey(key) }
+        if trusted { syncRunning() } else { pollAccess() }
     }
+
+    // MARK: - Permissions
 
     func requestAccess() {
         Permissions.request()
         Permissions.openSettings()
         pollAccess()
-    }
-
-    func setLaunchAtLogin(_ on: Bool) {
-        do {
-            try LoginItem.set(on)
-            launchAtLogin = LoginItem.isEnabled
-        } catch {
-            launchAtLogin = LoginItem.isEnabled
-            NSLog("winlego: login item change failed: \(error)")
-        }
-    }
-
-    private func refreshScreens() {
-        screens = Screens.current()
     }
 
     /// The system never tells us when the user flips the switch; ask once a second until granted.
@@ -63,8 +68,97 @@ final class AppModel: ObservableObject {
                     self.trusted = true
                     self.accessPoll?.invalidate()
                     self.accessPoll = nil
+                    self.syncRunning()
                 }
             }
         }
+    }
+
+    private func syncRunning() {
+        guard trusted else { return }
+        hotKeys.register()
+        if enabled { manager.start() }
+        objectWillChange.send()
+    }
+
+    // MARK: - Displays and layouts
+
+    private func refreshScreens() {
+        screens = Screens.current()
+        manager.screens = screens
+    }
+
+    func layoutID(for screen: ScreenInfo) -> String {
+        manager.layout(for: screen).id
+    }
+
+    func setLayout(_ layoutID: String, for screen: ScreenInfo) {
+        config.layoutByDisplay[screen.id] = layoutID
+        configChanged()
+        manager.reapplyAll()
+    }
+
+    func zones(on screen: ScreenInfo) -> [Zone] {
+        manager.layout(for: screen).zones
+    }
+
+    // MARK: - Window commands
+
+    func placeFocused(on screen: ScreenInfo, zone: Int) {
+        manager.placeFocused(at: Placement(displayID: screen.id, zone: zone))
+    }
+
+    func releaseFocused() { manager.releaseFocused() }
+    func arrangeAll() { manager.arrangeAll() }
+
+    func rememberFocused() {
+        guard let rule = manager.ruleForFocused() else { return }
+        // One app-wide rule per app; a new one replaces the old.
+        config.rules.removeAll { $0.bundleID == rule.bundleID && $0.titleContains == nil }
+        config.rules.append(rule)
+        configChanged()
+    }
+
+    func removeRule(_ rule: Rule) {
+        config.rules.removeAll { $0.id == rule.id }
+        configChanged()
+    }
+
+    /// How the menu describes where a rule sends windows.
+    func describe(_ rule: Rule) -> String {
+        let screen = rule.displayID.flatMap { id in screens.first { $0.id == id } }
+            ?? screens.first { $0.id == Screens.mainScreenID() }
+        let zoneName = screen.flatMap { s in zones(on: s).indices.contains(rule.zone) ? zones(on: s)[rule.zone].name : nil }
+            ?? "Zone \(rule.zone + 1)"
+        let title = rule.titleContains.map { " “\($0)”" } ?? ""
+        return "\(rule.appName)\(title) → \(screen?.name ?? "Main display") · \(zoneName)"
+    }
+
+    private func configChanged() {
+        manager.config = config
+        ConfigStore.save(config)
+    }
+
+    private func hotKey(_ key: HotKeyCenter.Key) {
+        guard enabled, trusted else { return }
+        switch key {
+        case .previousZone: manager.moveFocused(by: -1)
+        case .nextZone: manager.moveFocused(by: 1)
+        case .previousDisplay: manager.moveFocusedToDisplay(by: -1)
+        case .nextDisplay: manager.moveFocusedToDisplay(by: 1)
+        case .arrangeAll: manager.arrangeAll()
+        case .release: manager.releaseFocused()
+        }
+    }
+
+    // MARK: - Login item
+
+    func setLaunchAtLogin(_ on: Bool) {
+        do {
+            try LoginItem.set(on)
+        } catch {
+            NSLog("winlego: login item change failed: \(error)")
+        }
+        launchAtLogin = LoginItem.isEnabled
     }
 }

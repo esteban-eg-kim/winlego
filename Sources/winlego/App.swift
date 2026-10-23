@@ -26,8 +26,10 @@ private struct MenuBarIcon: View {
 final class AppDelegate: NSObject, NSApplicationDelegate {
     let model = AppModel()
     private var onboarding: NSWindow?
+    private lazy var dev = DevCommands(model: model)
 
     func applicationDidFinishLaunching(_ notification: Notification) {
+        dev.start()
         if !model.trusted { showOnboarding() }
     }
 
