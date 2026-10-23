@@ -12,6 +12,8 @@ import WinlegoCore
 ///     layout <display#> <layoutID>           pick a preset for a display
 ///     remember <bundleID>                    add a rule from where its window is now
 ///     nudge <bundleID> <dx> <dy>             move its window as if the app did it itself
+///     ratio <display#> <path|root> <r>       move a divider for now (what a boundary drag does)
+///     savelayout <display#>                  keep the dragged proportions (the prompt's Save)
 ///     arrange                                apply all rules
 ///     dump                                   write displays, windows and assignments to dev-dump.txt
 ///
@@ -50,7 +52,7 @@ final class DevCommands {
             guard let window = firstWindow(of: parts[1]), let key = window.key else { return fail(line) }
             manager.release(key, reason: "dev command")
         case "layout" where parts.count == 3:
-            guard let screen = screen(parts[1]), Presets.layout(id: parts[2]) != nil else { return fail(line) }
+            guard let screen = screen(parts[1]), model.config.layout(id: parts[2]) != nil else { return fail(line) }
             model.setLayout(parts[2], for: screen)
         case "remember" where parts.count == 2:
             guard let window = firstWindow(of: parts[1]) else { return fail(line) }
@@ -66,6 +68,14 @@ final class DevCommands {
             guard let window = firstWindow(of: parts[1]), let frame = window.frame,
                   let dx = Double(parts[2]), let dy = Double(parts[3]) else { return fail(line) }
             window.setFrame(frame.offsetBy(dx: dx, dy: dy))
+        case "ratio" where parts.count == 4:
+            // ratio <display#> <path, e.g. "root" or "1,0"> <0.1…0.9>: what dragging a divider does.
+            guard let screen = screen(parts[1]), let ratio = Double(parts[3]) else { return fail(line) }
+            let path: NodePath = parts[2] == "root" ? [] : parts[2].split(separator: ",").compactMap { Int($0) }
+            manager.setSessionRatio(ratio, at: path, on: screen)
+        case "savelayout" where parts.count == 2:
+            guard let screen = screen(parts[1]) else { return fail(line) }
+            manager.saveSessionLayout(for: screen)
         case "arrange":
             manager.arrangeAll()
         case "dump":

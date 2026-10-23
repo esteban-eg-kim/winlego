@@ -24,6 +24,11 @@ final class ZoneManager {
     var screens: [ScreenInfo] = []
     var enabled = true
     private lazy var drag = DragCoordinator(manager: self)
+    private lazy var resizer = DividerResizer(manager: self)
+    /// Divider drags live here until the user saves them; keyed by display.
+    private var sessionLayouts: [String: Layout] = [:]
+    /// A display's layout was saved after dragging a divider; the model persists it.
+    var onLayoutEdited: ((ScreenInfo, Layout) -> Void)?
 
     var isRunning: Bool { tracker.isRunning }
 
@@ -34,6 +39,7 @@ final class ZoneManager {
         tracker.start()
         drag.trigger = config.dragTrigger
         drag.start()
+        resizer.start()
         observers.append(NSWorkspace.shared.notificationCenter.addObserver(
             forName: NSWorkspace.didWakeNotification, object: nil, queue: .main
         ) { [weak self] _ in
@@ -45,6 +51,7 @@ final class ZoneManager {
     func stop() {
         tracker.stop()
         drag.stop()
+        resizer.stop()
         observers.forEach { NSWorkspace.shared.notificationCenter.removeObserver($0) }
         observers.removeAll()
         pendingRestores.values.forEach { $0.cancel() }
@@ -56,18 +63,73 @@ final class ZoneManager {
     func screen(_ id: String) -> ScreenInfo? { screens.first { $0.id == id } }
 
     func layout(for screen: ScreenInfo) -> Layout {
-        config.layout(for: screen.id, portrait: screen.isPortrait)
+        sessionLayouts[screen.id] ?? config.layout(for: screen.id, portrait: screen.isPortrait)
     }
 
     func zoneFrames(on screen: ScreenInfo) -> [CGRect] {
         layout(for: screen).frames(in: screen.visibleFrame, gap: config.gap)
     }
 
+    /// A zone number past the end (the layout shrank) maps to the last zone.
     func targetFrame(for placement: Placement) -> CGRect? {
         guard let screen = screen(placement.displayID) else { return nil }
         let frames = zoneFrames(on: screen)
-        guard frames.indices.contains(placement.zone) else { return nil }
-        return frames[placement.zone]
+        guard let last = frames.indices.last else { return nil }
+        return frames[min(placement.zone, last)]
+    }
+
+    // MARK: - Resizing zones by dragging a divider
+
+    /// Dividers with placed windows on both sides, as absolute Quartz lines.
+    func grabbableDividers() -> [(screen: ScreenInfo, divider: Divider, line: CGRect)] {
+        var result: [(ScreenInfo, Divider, CGRect)] = []
+        for screen in screens {
+            let layout = layout(for: screen)
+            let zones = layout.zones
+            let occupied = Set(assignments.values.filter { $0.displayID == screen.id }.map { min($0.zone, zones.count - 1) })
+            guard !occupied.isEmpty else { continue }
+            for divider in layout.dividers {
+                let firstSide = occupied.contains { zones[$0].path.starts(with: divider.path + [0]) }
+                let secondSide = occupied.contains { zones[$0].path.starts(with: divider.path + [1]) }
+                if firstSide && secondSide {
+                    result.append((screen, divider, divider.line.resolved(in: screen.visibleFrame)))
+                }
+            }
+        }
+        return result
+    }
+
+    /// Moves one divider for now: windows on the display follow, nothing is saved yet.
+    func setSessionRatio(_ ratio: Double, at path: NodePath, on screen: ScreenInfo) {
+        sessionLayouts[screen.id] = layout(for: screen).settingRatio(ratio, at: path)
+        replaceWindows(on: screen)
+    }
+
+    func hasUnsavedLayout(for screen: ScreenInfo) -> Bool { sessionLayouts[screen.id] != nil }
+
+    /// Keeps the dragged proportions. A preset becomes a custom copy owned by that display;
+    /// a custom layout is updated in place.
+    func saveSessionLayout(for screen: ScreenInfo) {
+        guard var layout = sessionLayouts.removeValue(forKey: screen.id) else { return }
+        if !config.customLayouts.contains(where: { $0.id == layout.id }) {
+            layout = Layout(id: "custom-\(screen.id.prefix(8).lowercased())", name: "\(layout.name) · \(screen.name)", root: layout.root)
+        }
+        config.upsert(layout)
+        config.layoutByDisplay[screen.id] = layout.id
+        onLayoutEdited?(screen, layout)
+        log.info("saved adjusted layout \(layout.id, privacy: .public) for \(screen.name, privacy: .public)")
+    }
+
+    /// The user picked another layout for the display: forget any unsaved drag.
+    func discardSessionLayout(for screen: ScreenInfo) {
+        sessionLayouts[screen.id] = nil
+    }
+
+    private func replaceWindows(on screen: ScreenInfo) {
+        for (key, placement) in assignments where placement.displayID == screen.id {
+            guard let window = window(for: key), let target = targetFrame(for: placement) else { continue }
+            if apply(target, to: window) { settledFrames[key] = window.frame }
+        }
     }
 
     /// Display ordering for ⌃⌥↑/↓: left to right, then top to bottom.
@@ -99,6 +161,7 @@ final class ZoneManager {
         states[key] = states[key] ?? EnforcementPolicy.WindowState()
         let ok = apply(target, to: window)
         if ok { settledFrames[key] = window.frame }
+        resizer.invalidate()
         log.info("place \(key, privacy: .public) '\(window.title ?? "", privacy: .public)' → \(placement.displayID.prefix(8), privacy: .public)/\(placement.zone) \(ok ? "ok" : "FAILED", privacy: .public)")
         return ok
     }
@@ -108,6 +171,7 @@ final class ZoneManager {
         states[key] = nil
         settledFrames[key] = nil
         pendingRestores.removeValue(forKey: key)?.cancel()
+        resizer.invalidate()
         log.info("release \(key, privacy: .public): \(reason, privacy: .public)")
     }
 

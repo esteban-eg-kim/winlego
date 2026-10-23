@@ -16,6 +16,9 @@ final class AppModel: ObservableObject {
     @Published private(set) var trusted = Permissions.isTrusted
     @Published private(set) var screens: [ScreenInfo] = []
     @Published var settingsTab: SettingsTab = .rules
+    /// Non-nil while the layout editor sheet is up.
+    @Published var editingLayout: Layout?
+    let editor = LayoutEditorModel()
 
     /// Enabled, permitted, and watching windows.
     var isActive: Bool { enabled && trusted && manager.isRunning }
@@ -50,6 +53,12 @@ final class AppModel: ObservableObject {
         })
 
         hotKeys.handler = { [weak self] key in self?.hotKey(key) }
+        manager.onLayoutEdited = { [weak self] screen, layout in
+            guard let self else { return }
+            config.upsert(layout)
+            config.layoutByDisplay[screen.id] = layout.id
+            ConfigStore.save(config)
+        }
         if trusted { syncRunning() } else { pollAccess() }
     }
 
@@ -97,6 +106,7 @@ final class AppModel: ObservableObject {
 
     func setLayout(_ layoutID: String, for screen: ScreenInfo) {
         config.layoutByDisplay[screen.id] = layoutID
+        manager.discardSessionLayout(for: screen)
         configChanged()
         manager.reapplyAll()
     }
@@ -155,6 +165,28 @@ final class AppModel: ObservableObject {
     }
 
     func runningApps() -> [AppInfo.Running] { AppInfo.running() }
+
+    var allLayouts: [Layout] { config.allLayouts }
+
+    func saveCustomLayout(_ layout: Layout) {
+        config.upsert(layout)
+        configChanged()
+        manager.reapplyAll()
+    }
+
+    func deleteCustomLayout(_ id: String) {
+        config.customLayouts.removeAll { $0.id == id }
+        for (display, layoutID) in config.layoutByDisplay where layoutID == id {
+            config.layoutByDisplay[display] = nil
+        }
+        configChanged()
+        manager.reapplyAll()
+    }
+
+    func openEditor(_ layout: Layout) {
+        editor.load(layout)
+        editingLayout = layout
+    }
 
     /// The zones a rule can pick from: those of its display's layout (main display when unset).
     func zones(forRuleDisplay displayID: String?) -> [Zone] {

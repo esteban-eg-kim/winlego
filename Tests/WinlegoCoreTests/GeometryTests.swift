@@ -39,6 +39,7 @@ import Testing
         #expect(zones[0].minX == 0 && zones[1].maxX == 3008)
         let thirds = Presets.thirds.frames(in: CGRect(x: 0, y: 0, width: 1000, height: 100))
         #expect(thirds.map(\.width) == [333, 334, 333])
+        #expect(thirds[0].maxX == thirds[1].minX && thirds[1].maxX == thirds[2].minX)
     }
 
     @Test func stepWrapsAround() {

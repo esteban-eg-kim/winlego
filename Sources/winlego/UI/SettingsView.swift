@@ -33,6 +33,26 @@ struct LayoutsView: View {
 
     var body: some View {
         Form {
+            Section("My layouts") {
+                ForEach(model.config.customLayouts) { layout in
+                    HStack(spacing: 16) {
+                        LayoutPreview(layout: layout, portrait: false).frame(width: 64, height: 36)
+                        Text(layout.name)
+                        Spacer()
+                        Button("Edit…") { model.openEditor(layout) }
+                        Button(role: .destructive) { model.deleteCustomLayout(layout.id) } label: { Image(systemName: "trash") }
+                            .buttonStyle(.borderless)
+                    }
+                }
+                HStack {
+                    Button("New Layout…") {
+                        model.openEditor(WinlegoCore.Layout(id: "custom-\(UUID().uuidString.prefix(8).lowercased())", name: "My Layout", root: .zone(name: nil)))
+                    }
+                    Spacer()
+                    Text("Or drag the boundary between two placed windows on the real screen, then save when asked.")
+                        .font(.caption).foregroundStyle(.secondary)
+                }
+            }
             Section("Layout per display") {
                 ForEach(model.screens) { screen in
                     HStack(spacing: 16) {
@@ -47,7 +67,7 @@ struct LayoutsView: View {
                             get: { model.layoutID(for: screen) },
                             set: { model.setLayout($0, for: screen) }
                         )) {
-                            ForEach(Presets.all) { layout in Text(layout.name).tag(layout.id) }
+                            ForEach(model.allLayouts) { layout in Text(layout.name).tag(layout.id) }
                         }
                         .labelsHidden()
                         .frame(width: 220)
@@ -68,6 +88,9 @@ struct LayoutsView: View {
             }
         }
         .formStyle(.grouped)
+        .sheet(item: Binding(get: { model.editingLayout }, set: { model.editingLayout = $0 })) { _ in
+            LayoutEditorView(model: model, editor: model.editor) { model.editingLayout = nil }
+        }
     }
 }
 

@@ -34,7 +34,7 @@ struct MenuView: View {
                         get: { model.layoutID(for: screen) },
                         set: { model.setLayout($0, for: screen) }
                     )) {
-                        ForEach(Presets.all) { layout in
+                        ForEach(model.allLayouts) { layout in
                             Text(layout.name).tag(layout.id)
                         }
                     }
