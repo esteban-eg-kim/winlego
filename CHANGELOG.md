@@ -2,4 +2,14 @@
 
 ## 0.1.0 (unreleased)
 
-- Project scaffold.
+- First version: a zone layout per display, windows placed by `⇧` drag, `⌃⌥`
+  shortcuts, the menu bar, or app rules.
+- Placed windows are kept in place when an app moves them, when displays change
+  and after wake; dragging a window away by hand releases it.
+- Eleven built-in layouts, including Full Screen for small displays, and a layout
+  editor for drawing your own (split, remove, rename, drag dividers).
+- Drag the boundary between two placed windows to resize both live; a prompt on
+  release offers to save the proportions as the display's layout.
+- Settings window: rules, layouts per display, spacing, drag trigger, ignored
+  apps, Open at Login.
+- Manual in English and Korean.
