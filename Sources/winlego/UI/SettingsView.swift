@@ -132,6 +132,21 @@ struct GeneralView: View {
                 Text("Once the drag has started, hold ⌃ Control as well to merge the zones you pass over into one.")
                     .font(.caption).foregroundStyle(.secondary)
             }
+            Section("Boundary drag") {
+                Toggle("Dismiss the “Save this layout?” prompt automatically", isOn: Binding(
+                    get: { model.config.savePromptAutoDismiss },
+                    set: { model.setSavePrompt(autoDismiss: $0, seconds: model.config.savePromptSeconds) }
+                ))
+                Stepper(value: Binding(
+                    get: { model.config.savePromptSeconds },
+                    set: { model.setSavePrompt(autoDismiss: model.config.savePromptAutoDismiss, seconds: $0) }
+                ), in: 3...120, step: 1) {
+                    LabeledContent("After") { Text(String(format: L("%lld s"), model.config.savePromptSeconds)).monospacedDigit() }
+                }
+                .disabled(!model.config.savePromptAutoDismiss)
+                Text("Dismissing counts as “Not Now”: the windows keep their new sizes, the layout is not changed.")
+                    .font(.caption).foregroundStyle(.secondary)
+            }
             Section("Shortcuts") {
                 ForEach(HotKeyCenter.Key.allCases) { key in
                     ShortcutRow(model: model, key: key)

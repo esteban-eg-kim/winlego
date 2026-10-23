@@ -18,11 +18,16 @@ public struct Config: Codable, Equatable, Sendable {
     public var customLayouts: [Layout] = []
     /// Shortcut overrides by action name; a missing action keeps its default.
     public var shortcuts: [String: KeyCombo] = [:]
+    /// The "save this layout?" prompt after a boundary drag goes away on its own…
+    public var savePromptAutoDismiss = true
+    /// …after this many seconds.
+    public var savePromptSeconds = 12
 
     public init() {}
 
     private enum CodingKeys: String, CodingKey {
         case layoutByDisplay, rules, dragTrigger, gap, excludedBundleIDs, customLayouts, shortcuts
+        case savePromptAutoDismiss, savePromptSeconds
     }
 
     public init(from decoder: Decoder) throws {
@@ -34,6 +39,8 @@ public struct Config: Codable, Equatable, Sendable {
         excludedBundleIDs = try c.decodeIfPresent([String].self, forKey: .excludedBundleIDs) ?? []
         customLayouts = try c.decodeIfPresent([Layout].self, forKey: .customLayouts) ?? []
         shortcuts = try c.decodeIfPresent([String: KeyCombo].self, forKey: .shortcuts) ?? [:]
+        savePromptAutoDismiss = try c.decodeIfPresent(Bool.self, forKey: .savePromptAutoDismiss) ?? true
+        savePromptSeconds = try c.decodeIfPresent(Int.self, forKey: .savePromptSeconds) ?? 12
     }
 
     /// Custom layouts first, then the presets.

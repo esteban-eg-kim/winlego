@@ -155,7 +155,8 @@ final class DividerResizer {
         guard dragging else { return }
         dragging = false
         guard let grab = active, manager.hasUnsavedLayout(for: grab.screen) else { return }
-        let prompt = SaveLayoutPrompt(displayName: grab.screen.name, near: Screens.quartzMouseLocation()) { [weak self] save in
+        let seconds = manager.config.savePromptAutoDismiss ? manager.config.savePromptSeconds : nil
+        let prompt = SaveLayoutPrompt(displayName: grab.screen.name, near: Screens.quartzMouseLocation(), dismissAfter: seconds) { [weak self] save in
             guard let self else { return }
             if save { manager.saveSessionLayout(for: grab.screen) }
             self.prompt = nil
@@ -240,15 +241,20 @@ private final class HandleView: NSView {
     }
 }
 
-/// "Save this layout?" after a divider drag.
+/// "Save this layout?" after a divider drag. Counts down to "Not Now" when asked to.
 @MainActor
 final class SaveLayoutPrompt {
     private let panel: NSPanel
     private let decide: (Bool) -> Void
+    private var later: NSButton!
+    private let bar = NSView()
     private var timer: Timer?
+    private var remaining: Int?
+    private let dismissAfter: Int?
 
-    init(displayName: String, near point: CGPoint, decide: @escaping (Bool) -> Void) {
+    init(displayName: String, near point: CGPoint, dismissAfter: Int?, decide: @escaping (Bool) -> Void) {
         self.decide = decide
+        self.dismissAfter = dismissAfter
         panel = NSPanel(contentRect: NSRect(x: 0, y: 0, width: 300, height: 76), styleMask: [.borderless, .nonactivatingPanel], backing: .buffered, defer: false)
         panel.isOpaque = false
         panel.backgroundColor = .clear
@@ -277,10 +283,17 @@ final class SaveLayoutPrompt {
         save.frame = NSRect(x: 196, y: 10, width: 88, height: 28)
         effect.addSubview(save)
 
-        let later = NSButton(title: L("Not Now"), target: self, action: #selector(laterTapped))
+        later = NSButton(title: L("Not Now"), target: self, action: #selector(laterTapped))
         later.bezelStyle = .rounded
-        later.frame = NSRect(x: 100, y: 10, width: 92, height: 28)
+        later.frame = NSRect(x: 84, y: 10, width: 108, height: 28)
         effect.addSubview(later)
+
+        // A thin bar along the bottom that drains with the countdown.
+        bar.wantsLayer = true
+        bar.layer?.backgroundColor = NSColor.controlAccentColor.withAlphaComponent(0.8).cgColor
+        bar.frame = NSRect(x: 0, y: 0, width: effect.bounds.width, height: 3)
+        bar.isHidden = dismissAfter == nil
+        effect.addSubview(bar)
 
         // Just above the cursor, kept on screen.
         let primaryHeight = NSScreen.screens.first?.frame.height ?? 0
@@ -294,9 +307,30 @@ final class SaveLayoutPrompt {
 
     func show() {
         panel.orderFrontRegardless()
-        timer = Timer.scheduledTimer(withTimeInterval: 12, repeats: false) { [weak self] _ in
-            MainActor.assumeIsolated { self?.finish(save: false) }
+        guard let dismissAfter, dismissAfter > 0 else { return }
+        remaining = dismissAfter
+        updateCountdown()
+        timer = Timer.scheduledTimer(withTimeInterval: 1, repeats: true) { [weak self] _ in
+            MainActor.assumeIsolated { self?.tick() }
         }
+    }
+
+    private func tick() {
+        guard let dismissAfter, var remaining else { return }
+        remaining -= 1
+        self.remaining = remaining
+        if remaining <= 0 { finish(save: false); return }
+        updateCountdown()
+        let width = panel.contentView!.bounds.width * CGFloat(remaining) / CGFloat(dismissAfter)
+        NSAnimationContext.runAnimationGroup { context in
+            context.duration = 1
+            bar.animator().frame.size.width = width
+        }
+    }
+
+    private func updateCountdown() {
+        guard let remaining else { return }
+        later.title = String(format: L("Not Now (%lld)"), remaining)
     }
 
     func close() { finish(save: false) }

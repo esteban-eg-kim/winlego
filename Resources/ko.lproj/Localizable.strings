@@ -93,6 +93,12 @@
 "My Layout" = "내 레이아웃";
 
 /* Boundary drag prompt */
+"Not Now (%lld)" = "나중에 (%lld)";
+"Boundary drag" = "경계 드래그";
+"Dismiss the “Save this layout?” prompt automatically" = "“이 레이아웃 저장?” 창을 자동으로 닫기";
+"After" = "시간";
+"%lld s" = "%lld초";
+"Dismissing counts as “Not Now”: the windows keep their new sizes, the layout is not changed." = "자동으로 닫히면 “나중에”로 처리됩니다. 창 크기는 유지되고 레이아웃은 바뀌지 않습니다.";
 "Save this layout for %@?" = "이 레이아웃을 %@ 에 저장할까요?";
 "Not Now" = "나중에";
 

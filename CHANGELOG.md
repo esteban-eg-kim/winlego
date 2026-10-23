@@ -7,6 +7,8 @@
 - Shortcuts can be changed, reset or removed in Settings › General; conflicts with
   other apps are flagged.
 - Korean localization, following the system language.
+- The "Save this layout?" prompt shows a countdown; how long it stays, or whether
+  it goes away at all, is a setting.
 
 ## 0.1.0 — 2026-10-23
 

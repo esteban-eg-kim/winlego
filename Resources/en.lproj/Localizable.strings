@@ -85,6 +85,12 @@
 "My Layout" = "My Layout";
 "Save this layout for %@?" = "Save this layout for %@?";
 "Not Now" = "Not Now";
+"Not Now (%lld)" = "Not Now (%lld)";
+"Boundary drag" = "Boundary drag";
+"Dismiss the “Save this layout?” prompt automatically" = "Dismiss the “Save this layout?” prompt automatically";
+"After" = "After";
+"%lld s" = "%lld s";
+"Dismissing counts as “Not Now”: the windows keep their new sizes, the layout is not changed." = "Dismissing counts as “Not Now”: the windows keep their new sizes, the layout is not changed.";
 "Full Screen" = "Full Screen";
 "Full" = "Full";
 "Halves" = "Halves";

@@ -204,6 +204,12 @@ final class AppModel: ObservableObject {
         configChanged()
     }
 
+    func setSavePrompt(autoDismiss: Bool, seconds: Int) {
+        config.savePromptAutoDismiss = autoDismiss
+        config.savePromptSeconds = min(max(seconds, 3), 120)
+        configChanged()
+    }
+
     func setExcluded(_ bundleID: String, _ excluded: Bool) {
         config.excludedBundleIDs.removeAll { $0 == bundleID }
         if excluded { config.excludedBundleIDs.append(bundleID) }

@@ -136,8 +136,9 @@ be dragged, like a split in a tiling window manager:
    - **Save** keeps the new proportions as that display's layout. If the display
      was using a built-in layout, a copy named like *Wide Left (⅔ + ⅓) · LG HDR 4K*
      is created under *My layouts*; from then on that copy is edited in place.
-   - **Not Now** (or ignoring the prompt for 12 seconds) leaves the windows as
-     they are but keeps the saved layout unchanged. New placements on that display
+   - **Not Now** (or letting the countdown run out; Settings › General sets how
+     long, or turns the automatic dismissal off) leaves the windows as they are
+     but keeps the saved layout unchanged. New placements on that display
      use the dragged proportions until you pick a layout again or restart.
 
 A boundary is only draggable while there are placed windows on both sides of it.
