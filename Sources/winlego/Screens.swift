@@ -36,6 +36,13 @@ enum Screens {
         }
     }
 
+    /// The cursor in Quartz coordinates (origin top-left of the primary display).
+    static func quartzMouseLocation() -> CGPoint {
+        let primaryHeight = NSScreen.screens.first?.frame.height ?? 0
+        let p = NSEvent.mouseLocation
+        return CGPoint(x: p.x, y: primaryHeight - p.y)
+    }
+
     static func mainScreenID() -> String? {
         uuidString(for: CGMainDisplayID())
     }

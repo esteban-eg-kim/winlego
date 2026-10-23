@@ -119,6 +119,11 @@ final class AppModel: ObservableObject {
         configChanged()
     }
 
+    func setDragTrigger(_ trigger: DragTrigger) {
+        config.dragTrigger = trigger
+        configChanged()
+    }
+
     func removeRule(_ rule: Rule) {
         config.rules.removeAll { $0.id == rule.id }
         configChanged()

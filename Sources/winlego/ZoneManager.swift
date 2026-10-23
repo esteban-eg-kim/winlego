@@ -17,15 +17,13 @@ final class ZoneManager {
     private var settledFrames: [WindowKey: CGRect] = [:]
     private var pendingRestores: [WindowKey: Task<Void, Never>] = [:]
     private var dragging: WindowKey?
-    private var mouseUpMonitor: Any?
     private var settleTask: Task<Void, Never>?
     private var observers: [NSObjectProtocol] = []
 
-    var config = Config()
+    var config = Config() { didSet { drag.trigger = config.dragTrigger } }
     var screens: [ScreenInfo] = []
     var enabled = true
-    /// Set by the drag overlay: where the user is dropping the window right now, if on a zone.
-    var dropTarget: (() -> Placement?)?
+    private lazy var drag = DragCoordinator(manager: self)
 
     var isRunning: Bool { tracker.isRunning }
 
@@ -34,9 +32,8 @@ final class ZoneManager {
         tracker.onChange = { [weak self] window, change in self?.handle(window, change) }
         tracker.onAppQuit = { [weak self] pid in self?.forget(pid: pid) }
         tracker.start()
-        mouseUpMonitor = NSEvent.addGlobalMonitorForEvents(matching: .leftMouseUp) { [weak self] _ in
-            MainActor.assumeIsolated { self?.mouseReleased() }
-        }
+        drag.trigger = config.dragTrigger
+        drag.start()
         observers.append(NSWorkspace.shared.notificationCenter.addObserver(
             forName: NSWorkspace.didWakeNotification, object: nil, queue: .main
         ) { [weak self] _ in
@@ -47,8 +44,7 @@ final class ZoneManager {
 
     func stop() {
         tracker.stop()
-        if let mouseUpMonitor { NSEvent.removeMonitor(mouseUpMonitor) }
-        mouseUpMonitor = nil
+        drag.stop()
         observers.forEach { NSWorkspace.shared.notificationCenter.removeObserver($0) }
         observers.removeAll()
         pendingRestores.values.forEach { $0.cancel() }
@@ -246,14 +242,20 @@ final class ZoneManager {
         perform(action, for: key, window: window)
     }
 
-    private func mouseReleased() {
-        guard let key = dragging else { return }
+    /// The mouse button went up. `dragged` is the window the drag monitor saw being moved;
+    /// `drop` the zone it was let go over, if the overlay was up.
+    func mouseUp(dragged: AXWindow?, drop: Placement?) {
+        let key = dragged?.key ?? dragging
         dragging = nil
-        guard let placement = assignments[key], let window = window(for: key),
+        if let drop, let dragged, dragged.isPlaceable {
+            place(dragged, at: drop)
+            return
+        }
+        guard let key, let placement = assignments[key], let window = dragged ?? window(for: key),
               let target = targetFrame(for: placement), let frame = window.frame else { return }
         let expected = settledFrames[key] ?? target
         var state = states[key] ?? EnforcementPolicy.WindowState()
-        let action = policy.handle(.dragEnded(frame: frame, target: expected, dropZone: dropTarget?(), at: now), state: &state)
+        let action = policy.handle(.dragEnded(frame: frame, target: expected, dropZone: drop, at: now), state: &state)
         states[key] = state
         perform(action, for: key, window: window)
     }

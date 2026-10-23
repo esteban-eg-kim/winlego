@@ -53,6 +53,18 @@ struct MenuView: View {
             }
         }
 
+        Menu("Show Zones While Dragging") {
+            Picker("Trigger", selection: Binding(
+                get: { model.config.dragTrigger },
+                set: { model.setDragTrigger($0) }
+            )) {
+                Text("Holding ⇧ Shift").tag(DragTrigger.shift)
+                Text("Holding ⌥ Option").tag(DragTrigger.option)
+                Text("Always").tag(DragTrigger.always)
+            }
+            .pickerStyle(.inline)
+        }
+
         Divider()
 
         Toggle("Open at Login", isOn: Binding(
