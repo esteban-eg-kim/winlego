@@ -1,5 +1,6 @@
 import AppKit
 import Combine
+import os
 import WinlegoCore
 
 @MainActor
@@ -279,7 +280,8 @@ final class AppModel: ObservableObject {
         ConfigStore.save(config)
     }
 
-    private func hotKey(_ key: HotKeyCenter.Key) {
+    func hotKey(_ key: HotKeyCenter.Key) {
+        Logger(subsystem: Geometry.bundleID, category: "hotkeys").info("pressed \(key.rawValue, privacy: .public)")
         guard enabled, trusted else { return }
         switch key {
         case .previousZone: manager.moveFocused(by: -1)

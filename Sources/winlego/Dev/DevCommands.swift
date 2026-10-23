@@ -101,6 +101,17 @@ final class DevCommands {
                 await DevCommands.simulateDrag(from: start, to: CGPoint(x: x, y: y), flags: flags)
                 self.log.info("simdrag done")
             }
+        case "hotkey" where parts.count == 3:
+            // hotkey <bundleID> <action>: bring the app forward, then act as if the shortcut was pressed.
+            guard let app = NSRunningApplication.runningApplications(withBundleIdentifier: parts[1]).first,
+                  let key = HotKeyCenter.Key(rawValue: parts[2]) else { return fail(line) }
+            app.activate()
+            Task { @MainActor in
+                try? await Task.sleep(for: .milliseconds(500))
+                let focused = AXWindow.focused()
+                self.log.info("focused: \(focused?.title ?? "nil", privacy: .public)")
+                self.model.hotKey(key)
+            }
         case "arrange":
             manager.arrangeAll()
         case "dump":

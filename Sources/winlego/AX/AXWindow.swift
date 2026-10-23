@@ -11,6 +11,8 @@ private let getWindowNumber: GetWindowFn? = {
     return unsafeBitCast(symbol, to: GetWindowFn.self)
 }()
 
+private let focusLog = Logger(subsystem: "io.github.esteban-eg-kim.winlego", category: "ax")
+
 /// Identity of a window that survives re-listing.
 struct WindowKey: Hashable, CustomStringConvertible {
     let pid: pid_t
@@ -107,18 +109,24 @@ final class AXWindow {
         return elements.map { AXWindow(element: $0, pid: pid) }
     }
 
-    /// The window with keyboard focus anywhere on the system.
+    /// The window the user is working in. Asks the frontmost app directly: the
+    /// system-wide "focused application" is unreliable with Chrome and other apps that
+    /// build their accessibility tree lazily. Falls back to the app's main window and
+    /// then its frontmost placeable window.
     static func focused() -> AXWindow? {
-        let system = AXUIElementCreateSystemWide()
-        var appValue: CFTypeRef?
-        guard AXUIElementCopyAttributeValue(system, kAXFocusedApplicationAttribute as CFString, &appValue) == .success,
-              let appValue else { return nil }
-        let app = appValue as! AXUIElement
-        var pid: pid_t = 0
-        AXUIElementGetPid(app, &pid)
-        var windowValue: CFTypeRef?
-        guard AXUIElementCopyAttributeValue(app, kAXFocusedWindowAttribute as CFString, &windowValue) == .success,
-              let windowValue else { return nil }
-        return AXWindow(element: windowValue as! AXUIElement, pid: pid)
+        guard let front = NSWorkspace.shared.frontmostApplication else { return nil }
+        let pid = front.processIdentifier
+        let app = AXUIElementCreateApplication(pid)
+        for attribute in [kAXFocusedWindowAttribute, kAXMainWindowAttribute] {
+            var value: CFTypeRef?
+            if AXUIElementCopyAttributeValue(app, attribute as CFString, &value) == .success, let value,
+               CFGetTypeID(value) == AXUIElementGetTypeID() {
+                let window = AXWindow(element: value as! AXUIElement, pid: pid)
+                if window.isPlaceable { return window }
+            }
+        }
+        if let window = windows(of: pid).first(where: \.isPlaceable) { return window }
+        focusLog.warning("no placeable window for frontmost \(front.bundleIdentifier ?? "?", privacy: .public)")
+        return nil
     }
 }
