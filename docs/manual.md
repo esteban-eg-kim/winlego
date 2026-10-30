@@ -5,17 +5,7 @@
 winlego lives in the menu bar as a grid icon. Filled means it is on and allowed;
 hollow means it is off or still waiting for permission.
 
-## Contents
-
-1. [Permission](#permission)
-2. [Layouts](#layouts)
-3. [Placing windows](#placing-windows)
-4. [Keeping windows in place](#keeping-windows-in-place)
-5. [Rules](#rules)
-6. [Resizing zones on screen](#resizing-zones-on-screen)
-7. [The layout editor](#the-layout-editor)
-8. [Settings](#settings)
-9. [Troubleshooting](#troubleshooting)
+![winlego demo: Shift-drag into a zone, Control to merge zones, drag a boundary, windows snap back](media/demo-en.gif)
 
 ## Permission
 
@@ -60,7 +50,7 @@ Layouts you draw yourself or adjust on screen appear above the built-in ones as
 
 A window is *placed* when winlego has put it in a zone. Four ways:
 
-<p align="center"><img src="img/overlay.png" alt="Zones shown while dragging with Shift; with Control held, Top Right and Bottom Right are merged" width="720"></p>
+![Zones shown while dragging with Shift; with Control held, Top Right and Bottom Right are merged](img/overlay.png)
 
 - **Drag with `⇧`.** Start dragging any window by its title bar, hold `⇧` (you can
   press it mid-drag), and every display shows its zones. The zone under the cursor
@@ -131,6 +121,8 @@ and **Arrange All by Rules** (`⌃⌥↩`) moves every window with a rule into p
 
 When two placed windows sit in neighbouring zones, the boundary between them can
 be dragged, like a split in a tiling window manager:
+
+![After dragging the boundary, winlego asks whether to save the new proportions](img/boundary-en.png)
 
 1. Move the cursor onto the boundary. A coloured bar with a grip appears on it.
    It appears only where the boundary is visible: if another window lies on top
