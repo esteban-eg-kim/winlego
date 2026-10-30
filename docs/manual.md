@@ -60,6 +60,8 @@ Layouts you draw yourself or adjust on screen appear above the built-in ones as
 
 A window is *placed* when winlego has put it in a zone. Four ways:
 
+<p align="center"><img src="img/overlay.png" alt="Zones shown while dragging with Shift; with Control held, Top Right and Bottom Right are merged" width="720"></p>
+
 - **Drag with `⇧`.** Start dragging any window by its title bar, hold `⇧` (you can
   press it mid-drag), and every display shows its zones. The zone under the cursor
   lights up; let go to place the window there. Settings › General can change the
@@ -131,6 +133,8 @@ When two placed windows sit in neighbouring zones, the boundary between them can
 be dragged, like a split in a tiling window manager:
 
 1. Move the cursor onto the boundary. A coloured bar with a grip appears on it.
+   It appears only where the boundary is visible: if another window lies on top
+   of it, there is no bar.
 2. Drag. Both windows (and any others in the affected zones) follow live.
 3. Let go. A small prompt asks **Save this layout for <display>?**
    - **Save** keeps the new proportions as that display's layout. If the display

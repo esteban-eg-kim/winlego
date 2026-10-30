@@ -1,6 +1,6 @@
 # <img src="docs/logo/winlego-512.png" alt="" width="40"> winlego
 
-**English** · [한국어](README.ko.md)
+**English** · [한국어](README.ko.md) · [Website](https://xkorfun.github.io)
 
 **Snap windows into zones, and keep them there.**
 
@@ -8,6 +8,12 @@ With more than one display, windows drift: an app restores itself to the wrong
 place, a monitor wakes up and everything shuffles, and you spend the morning
 dragging things back. winlego is a small macOS menu bar app that gives each
 display a zone layout, puts windows into zones, and keeps them there.
+
+<p align="center">
+  <img src="docs/media/demo-en.gif" alt="winlego demo: drag with Shift to drop a window into a zone, add Control to merge zones, drag the boundary between two windows, and windows snap back when an app moves them" width="720">
+</p>
+
+<p align="center"><a href="docs/media/demo-en.mp4">Watch in full quality (MP4)</a></p>
 
 ## Features
 
@@ -30,16 +36,20 @@ display a zone layout, puts windows into zones, and keeps them there.
 
 ## Install
 
-winlego is in private development. Build it from source (Swift 6 toolchain, no
-Xcode needed):
-
 ```sh
-scripts/bundle.sh && open build/winlego.app
+brew install --cask esteban-eg-kim/tap/winlego
 ```
 
-The app is signed with a local certificate and not notarized, so on first launch
-macOS may refuse to open it; run `xattr -dr com.apple.quarantine build/winlego.app`
-once. A Homebrew cask will follow when the project goes public.
+Or download `winlego-x.y.z.zip` from [Releases](https://github.com/esteban-eg-kim/winlego/releases),
+move `winlego.app` to `/Applications`, and run once:
+
+```sh
+xattr -dr com.apple.quarantine /Applications/winlego.app
+```
+
+winlego is signed but not notarized (no paid Apple Developer account), so without
+that line macOS refuses to open it. Homebrew does it for you. Requires macOS 13
+or later, Apple silicon or Intel.
 
 ## Quick start
 
@@ -52,6 +62,10 @@ once. A Homebrew cask will follow when the project goes public.
 
 The full guide covers every menu item, rules, the layout editor and
 troubleshooting: **[Manual](docs/manual.md)** ([한국어](docs/manual.ko.md)).
+
+<p align="center"><img src="docs/img/menu.png" alt="The winlego menu: Move Window to, a display, a zone" width="560"></p>
+
+<p align="center"><img src="docs/img/boundary-en.png" alt="After dragging the boundary between two windows, winlego asks whether to save the new proportions" width="720"></p>
 
 ## Shortcuts
 
@@ -86,7 +100,9 @@ released after 2012.
 scripts/test.sh                      # unit tests (WinlegoCore)
 swift build                          # debug build
 ARCHS=arm64 scripts/bundle.sh        # build/winlego.app, signed
-scripts/release.sh 0.1.0             # dist/winlego-0.1.0.zip
+scripts/release.sh 0.2.1             # dist/winlego-0.2.1.zip
+docs/media/make.sh                   # screenshots and demo (Chrome, Node 22)
+scripts/make-icon.sh                 # app icon from Resources/AppIcon.icon (Xcode)
 ```
 
 Logs: `/usr/bin/log show --last 5m --info --predicate 'subsystem == "io.github.esteban-eg-kim.winlego"'`.

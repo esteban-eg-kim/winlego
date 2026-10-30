@@ -1,5 +1,13 @@
 # Changelog
 
+## 0.2.1 — 2026-10-30
+
+- The boundary handle no longer appears over a window that is not in a zone: it
+  shows only where the boundary between two placed windows is actually visible.
+- New app icon in the macOS 26 Liquid Glass style; it follows light, dark, tinted
+  and clear appearances. Older macOS versions get the light rendering.
+- README and manual: screenshots, a demo video, and Homebrew install.
+
 ## 0.2.0 — 2026-10-24
 
 - Merge zones while dragging: once the drag is under way, hold `⌃` as well and the

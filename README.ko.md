@@ -1,6 +1,6 @@
 # <img src="docs/logo/winlego-512.png" alt="" width="40"> winlego
 
-[English](README.md) · **한국어**
+[English](README.md) · **한국어** · [웹사이트](https://xkorfun.github.io)
 
 **창을 영역에 맞춰 넣고, 그 자리를 지킵니다.**
 
@@ -8,6 +8,12 @@
 모니터가 깨어나면 전부 뒤섞이고, 아침마다 창을 끌어다 놓는 데 시간을 씁니다.
 winlego 는 디스플레이마다 영역 레이아웃을 정하고, 창을 영역에 넣고, 그 자리를
 지켜 주는 작은 macOS 메뉴바 앱입니다.
+
+<p align="center">
+  <img src="docs/media/demo-ko.gif" alt="winlego 데모: ⇧ 를 누른 채 끌어 창을 영역에 넣고, ⌃ 로 영역을 합치고, 두 창 사이 경계를 끌고, 앱이 창을 옮겨도 제자리로 돌아오는 모습" width="720">
+</p>
+
+<p align="center"><a href="docs/media/demo-ko.mp4">고화질로 보기 (MP4)</a></p>
 
 ## 기능
 
@@ -26,15 +32,20 @@ winlego 는 디스플레이마다 영역 레이아웃을 정하고, 창을 영�
 
 ## 설치
 
-아직 비공개 개발 중입니다. 소스에서 빌드합니다(Swift 6 툴체인, Xcode 불필요):
-
 ```sh
-scripts/bundle.sh && open build/winlego.app
+brew install --cask esteban-eg-kim/tap/winlego
 ```
 
-로컬 인증서로 서명했고 공증은 하지 않아 첫 실행 때 macOS 가 열기를 거부할 수
-있습니다. `xattr -dr com.apple.quarantine build/winlego.app` 을 한 번 실행하세요.
-공개 후에는 Homebrew cask 를 제공할 예정입니다.
+또는 [Releases](https://github.com/esteban-eg-kim/winlego/releases) 에서 `winlego-x.y.z.zip` 을
+받아 `winlego.app` 을 `/Applications` 로 옮기고, 한 번만 실행하세요:
+
+```sh
+xattr -dr com.apple.quarantine /Applications/winlego.app
+```
+
+서명은 했지만 공증은 하지 않아서(유료 Apple 개발자 계정 없음) 이 줄이 없으면 macOS 가
+열기를 거부합니다. Homebrew 로 설치하면 알아서 처리합니다. macOS 13 이상,
+Apple silicon 과 Intel 모두 지원합니다.
 
 ## 빠른 시작
 
@@ -46,6 +57,10 @@ scripts/bundle.sh && open build/winlego.app
 
 메뉴 항목, 규칙, 레이아웃 에디터, 문제 해결은 **[매뉴얼](docs/manual.ko.md)** 에
 있습니다 ([English](docs/manual.md)).
+
+<p align="center"><img src="docs/img/menu.png" alt="winlego 메뉴: Move Window to, 디스플레이, 영역" width="560"></p>
+
+<p align="center"><img src="docs/img/boundary-ko.png" alt="두 창 사이 경계를 끈 뒤 새 비율을 저장할지 묻는 팝업" width="720"></p>
 
 ## 단축키
 
@@ -78,7 +93,9 @@ Rectangle, Amethyst, Magnet 이 쓰는 것과 같은 공개 API 이며, 앱마�
 scripts/test.sh                      # 단위 테스트 (WinlegoCore)
 swift build                          # 디버그 빌드
 ARCHS=arm64 scripts/bundle.sh        # build/winlego.app, 서명 포함
-scripts/release.sh 0.1.0             # dist/winlego-0.1.0.zip
+scripts/release.sh 0.2.1             # dist/winlego-0.2.1.zip
+docs/media/make.sh                   # 스크린샷과 데모 (Chrome, Node 22)
+scripts/make-icon.sh                 # Resources/AppIcon.icon 으로 앱 아이콘 (Xcode)
 ```
 
 로그: `/usr/bin/log show --last 5m --info --predicate 'subsystem == "io.github.esteban-eg-kim.winlego"'`.
