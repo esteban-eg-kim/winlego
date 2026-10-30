@@ -3,7 +3,7 @@
 # scripts/release.sh prints the version and sha256 to paste here. Check with `brew style`.
 cask "winlego" do
   version "0.2.1"
-  sha256 "REPLACE_WITH_SHA256"
+  sha256 "dceb336fc4997e2998b49fc663b2f7ea30d9cf03ba9b26b4eed06339a1f76842"
 
   url "https://github.com/esteban-eg-kim/winlego/releases/download/v#{version}/winlego-#{version}.zip"
   name "winlego"
