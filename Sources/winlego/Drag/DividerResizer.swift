@@ -65,10 +65,40 @@ final class DividerResizer {
     private func mouseMoved() {
         guard !dragging else { return }
         let point = Screens.quartzMouseLocation()
-        if let grab = grabs().first(where: { DividerResizer.isNear(point, $0.line) }) {
+        if let grab = grabs().first(where: { DividerResizer.isNear(point, $0.line) }), isExposed(grab, at: point) {
             show(grab)
         } else if active != nil {
             hide()
+        }
+    }
+
+    /// True when, at the cursor, the topmost window just either side of the boundary is a
+    /// placed window: the boundary is actually visible, not covered by some other window.
+    private func isExposed(_ grab: Grab, at point: CGPoint) -> Bool {
+        let offset = CGFloat(manager.config.gap) / 2 + 4
+        let probes = grab.isVertical
+            ? [CGPoint(x: grab.line.minX - offset, y: point.y), CGPoint(x: grab.line.minX + offset, y: point.y)]
+            : [CGPoint(x: point.x, y: grab.line.minY - offset), CGPoint(x: point.x, y: grab.line.minY + offset)]
+        let stack = DividerResizer.windowStack()
+        return probes.allSatisfy { probe in
+            guard let top = stack.first(where: { $0.bounds.contains(probe) }) else { return false }
+            return manager.isPlaced(windowNumber: top.number)
+        }
+    }
+
+    /// On-screen app windows, front to back, in Quartz coordinates. Our own panels and
+    /// overlays, menus and the Dock (anything off the normal window layer) are skipped.
+    private static func windowStack() -> [(number: CGWindowID, bounds: CGRect)] {
+        guard let list = CGWindowListCopyWindowInfo([.optionOnScreenOnly, .excludeDesktopElements], kCGNullWindowID)
+                as? [[String: Any]] else { return [] }
+        let me = ProcessInfo.processInfo.processIdentifier
+        return list.compactMap { info in
+            guard (info[kCGWindowLayer as String] as? Int) == 0,
+                  (info[kCGWindowOwnerPID as String] as? pid_t) != me,
+                  let number = info[kCGWindowNumber as String] as? CGWindowID,
+                  let boundsDict = info[kCGWindowBounds as String] as? NSDictionary,
+                  let bounds = CGRect(dictionaryRepresentation: boundsDict) else { return nil }
+            return (number, bounds)
         }
     }
 

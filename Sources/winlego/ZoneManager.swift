@@ -103,6 +103,11 @@ final class ZoneManager {
         return result
     }
 
+    /// Whether a window (by Quartz window number) is placed in a zone.
+    func isPlaced(windowNumber: CGWindowID) -> Bool {
+        assignments.keys.contains { $0.number == windowNumber }
+    }
+
     /// Moves one divider for now: windows on the display follow, nothing is saved yet.
     func setSessionRatio(_ ratio: Double, at path: NodePath, on screen: ScreenInfo) {
         sessionLayouts[screen.id] = layout(for: screen).settingRatio(ratio, at: path)
